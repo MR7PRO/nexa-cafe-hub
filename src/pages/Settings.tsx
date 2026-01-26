@@ -42,12 +42,16 @@ import {
   Trash2,
   Save,
   Percent,
+  Monitor,
+  Gamepad2,
+  MapPin,
 } from 'lucide-react';
 import type { Tables, Json } from '@/integrations/supabase/types';
 
 type RatePlan = Tables<'rate_plans'>;
 type UserRole = Tables<'user_roles'>;
 type Profile = Tables<'profiles'>;
+type Device = Tables<'devices'>;
 
 interface DiscountSettings {
   max_discount_percent: number;
@@ -100,6 +104,17 @@ export default function Settings() {
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Devices
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [showDeviceDialog, setShowDeviceDialog] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [deviceForm, setDeviceForm] = useState({
+    name: '',
+    type: 'playstation' as 'playstation' | 'pc',
+    location: '',
+    default_rate_plan_id: '',
+  });
+
   // Loading states
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -116,6 +131,7 @@ export default function Settings() {
       fetchRatePlans(),
       fetchSettings(),
       fetchUsersWithRoles(),
+      fetchDevices(),
     ]);
     setLoading(false);
   };
@@ -152,6 +168,16 @@ export default function Settings() {
     if (receiptData?.value) {
       setReceiptTemplate(receiptData.value as unknown as ReceiptTemplate);
     }
+  };
+
+  const fetchDevices = async () => {
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .order('name');
+
+    if (data) setDevices(data);
+    if (error) console.error('Error fetching devices:', error);
   };
 
   const fetchUsersWithRoles = async () => {
@@ -346,6 +372,74 @@ export default function Settings() {
     }
   };
 
+  // Device handlers
+  const handleSaveDevice = async () => {
+    if (!deviceForm.name) {
+      toast({ title: t('error'), description: 'يرجى إدخال اسم الجهاز', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+
+    const deviceData = {
+      name: deviceForm.name,
+      type: deviceForm.type,
+      location: deviceForm.location || null,
+      default_rate_plan_id: deviceForm.default_rate_plan_id || null,
+    };
+
+    if (editingDevice) {
+      const { error } = await supabase
+        .from('devices')
+        .update(deviceData)
+        .eq('id', editingDevice.id);
+
+      if (error) {
+        toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'تم تحديث الجهاز بنجاح' });
+      }
+    } else {
+      const { error } = await supabase.from('devices').insert(deviceData);
+
+      if (error) {
+        toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'تم إضافة الجهاز بنجاح' });
+      }
+    }
+
+    setSaving(false);
+    setShowDeviceDialog(false);
+    setEditingDevice(null);
+    setDeviceForm({ name: '', type: 'playstation', location: '', default_rate_plan_id: '' });
+    fetchDevices();
+  };
+
+  const handleEditDevice = (device: Device) => {
+    setEditingDevice(device);
+    setDeviceForm({
+      name: device.name,
+      type: device.type,
+      location: device.location || '',
+      default_rate_plan_id: device.default_rate_plan_id || '',
+    });
+    setShowDeviceDialog(true);
+  };
+
+  const handleToggleDevice = async (device: Device) => {
+    const { error } = await supabase
+      .from('devices')
+      .update({ is_active: !device.is_active })
+      .eq('id', device.id);
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+    } else {
+      fetchDevices();
+    }
+  };
+
   if (role !== 'admin') {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -376,10 +470,14 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="rate-plans" className="space-y-6" dir="rtl">
-        <TabsList className="grid w-full grid-cols-4 bg-card">
+        <TabsList className="grid w-full grid-cols-5 bg-card">
           <TabsTrigger value="rate-plans" className="gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">خطط التسعير</span>
+          </TabsTrigger>
+          <TabsTrigger value="devices" className="gap-2">
+            <Monitor className="h-4 w-4" />
+            <span className="hidden sm:inline">الأجهزة</span>
           </TabsTrigger>
           <TabsTrigger value="discount" className="gap-2">
             <Percent className="h-4 w-4" />
@@ -509,6 +607,179 @@ export default function Settings() {
                       </TableCell>
                     </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Devices Tab */}
+        <TabsContent value="devices">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="h-5 w-5 text-primary" />
+                إدارة الأجهزة
+              </CardTitle>
+              <Dialog open={showDeviceDialog} onOpenChange={setShowDeviceDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={() => {
+                      setEditingDevice(null);
+                      setDeviceForm({ name: '', type: 'playstation', location: '', default_rate_plan_id: '' });
+                    }}
+                  >
+                    <Plus className="ml-2 h-4 w-4" />
+                    إضافة جهاز
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>{editingDevice ? 'تعديل الجهاز' : 'إضافة جهاز'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>اسم الجهاز</Label>
+                      <Input
+                        value={deviceForm.name}
+                        onChange={(e) => setDeviceForm({ ...deviceForm, name: e.target.value })}
+                        placeholder="مثال: PS1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>نوع الجهاز</Label>
+                      <Select
+                        value={deviceForm.type}
+                        onValueChange={(value: 'playstation' | 'pc') => setDeviceForm({ ...deviceForm, type: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="playstation">
+                            <div className="flex items-center gap-2">
+                              <Gamepad2 className="h-4 w-4" />
+                              PlayStation
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="pc">
+                            <div className="flex items-center gap-2">
+                              <Monitor className="h-4 w-4" />
+                              PC
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>الموقع (اختياري)</Label>
+                      <Input
+                        value={deviceForm.location}
+                        onChange={(e) => setDeviceForm({ ...deviceForm, location: e.target.value })}
+                        placeholder="مثال: الطابق الأول"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>خطة التسعير الافتراضية</Label>
+                      <Select
+                        value={deviceForm.default_rate_plan_id}
+                        onValueChange={(value) => setDeviceForm({ ...deviceForm, default_rate_plan_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر خطة التسعير" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ratePlans.filter(p => p.is_active).map((plan) => (
+                            <SelectItem key={plan.id} value={plan.id}>
+                              {plan.name} - {formatILS(Number(plan.price_per_hour_ils))}/ساعة
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={handleSaveDevice} className="w-full" disabled={saving}>
+                      <Save className="ml-2 h-4 w-4" />
+                      {saving ? 'جاري الحفظ...' : 'حفظ'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>الجهاز</TableHead>
+                    <TableHead>النوع</TableHead>
+                    <TableHead>الموقع</TableHead>
+                    <TableHead>خطة التسعير</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {devices.map((device) => {
+                    const ratePlan = ratePlans.find(p => p.id === device.default_rate_plan_id);
+                    return (
+                      <TableRow key={device.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {device.type === 'playstation' ? (
+                              <Gamepad2 className="h-4 w-4 text-blue-500" />
+                            ) : (
+                              <Monitor className="h-4 w-4 text-green-500" />
+                            )}
+                            {device.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {device.type === 'playstation' ? 'PlayStation' : 'PC'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {device.location ? (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              {device.location}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {ratePlan ? (
+                            <span>{ratePlan.name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">غير محدد</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={device.is_active ? 'default' : 'secondary'}>
+                            {device.is_active ? 'نشط' : 'غير نشط'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditDevice(device)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Switch
+                              checked={device.is_active}
+                              onCheckedChange={() => handleToggleDevice(device)}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {devices.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        لا توجد أجهزة مسجلة. اضغط على "إضافة جهاز" للبدء.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
