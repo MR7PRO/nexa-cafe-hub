@@ -11,6 +11,7 @@ import Devices from "./pages/Devices";
 import POS from "./pages/POS";
 import Products from "./pages/Products";
 import Tickets from "./pages/Tickets";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function AppRoutes() {
       <Route path="/pos" element={<ProtectedRoute><POS /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
