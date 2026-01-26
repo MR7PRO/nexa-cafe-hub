@@ -147,6 +147,27 @@ export const ar = {
   noProducts: 'لا توجد منتجات',
   noTickets: 'لا توجد فواتير',
   noShifts: 'لا توجد ورديات',
+  
+  // Settings
+  ratePlans: 'خطط التسعير',
+  discountLimits: 'حدود الخصم',
+  receiptTemplate: 'قالب الإيصال',
+  userRoles: 'صلاحيات المستخدمين',
+  maxDiscountPercent: 'الحد الأقصى للخصم',
+  requirePinAbove: 'طلب PIN للخصم فوق',
+  receiptHeader: 'رأس الإيصال',
+  receiptFooter: 'تذييل الإيصال',
+  showLogo: 'إظهار الشعار',
+  showCashier: 'إظهار اسم الكاشير',
+  pricePerHour: 'السعر بالساعة',
+  minCharge: 'الحد الأدنى',
+  roundingMinutes: 'تقريب الوقت',
+  active: 'نشط',
+  inactive: 'غير نشط',
+  settingsSaved: 'تم حفظ الإعدادات',
+  roleUpdated: 'تم تحديث الصلاحية',
+  cannotRemoveLastAdmin: 'لا يمكن إزالة آخر مدير',
+  adminOnlyPage: 'هذه الصفحة متاحة للمديرين فقط',
 };
 
 export type TranslationKey = keyof typeof ar;
