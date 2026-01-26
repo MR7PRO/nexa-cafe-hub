@@ -12,6 +12,7 @@ import POS from "./pages/POS";
 import Products from "./pages/Products";
 import Tickets from "./pages/Tickets";
 import Reports from "./pages/Reports";
+import Shifts from "./pages/Shifts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ function AppRoutes() {
       <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+      <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
