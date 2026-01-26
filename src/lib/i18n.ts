@@ -124,6 +124,19 @@ export const ar = {
   shortage: 'عجز',
   balanced: 'متوازن',
   
+  // Expenses
+  expense: 'مصروف',
+  addExpense: 'إضافة مصروف',
+  expenseTitle: 'عنوان المصروف',
+  expenseAmount: 'المبلغ',
+  expenseNote: 'ملاحظة',
+  totalExpenses: 'إجمالي المصروفات',
+  todayExpenses: 'مصروفات اليوم',
+  netProfit: 'صافي الربح',
+  grossRevenue: 'إجمالي الإيرادات',
+  noExpenses: 'لا توجد مصروفات',
+  expenseAdded: 'تم إضافة المصروف',
+  
   // Placeholders
   searchProducts: 'بحث عن منتج...',
   selectRatePlan: 'اختر خطة التسعير',
