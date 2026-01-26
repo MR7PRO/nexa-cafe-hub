@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { DeviceCard } from '@/components/devices/DeviceCard';
+import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -57,6 +58,11 @@ export default function Devices() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'playstation' | 'pc'>('all');
+  
+  // Transfer dialog state
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferSourceDeviceId, setTransferSourceDeviceId] = useState<string | null>(null);
+  const [transferLoading, setTransferLoading] = useState(false);
   
   // New device form
   const [newDevice, setNewDevice] = useState({
@@ -263,6 +269,36 @@ export default function Devices() {
     }
   };
 
+  const handleOpenTransfer = (deviceId: string) => {
+    setTransferSourceDeviceId(deviceId);
+    setTransferDialogOpen(true);
+  };
+
+  const handleTransferSession = async (targetDeviceId: string) => {
+    if (!transferSourceDeviceId) return;
+    
+    const session = sessions[transferSourceDeviceId];
+    if (!session) return;
+
+    setTransferLoading(true);
+
+    const { error } = await supabase
+      .from('sessions')
+      .update({ device_id: targetDeviceId })
+      .eq('id', session.id);
+
+    setTransferLoading(false);
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: t('sessionTransferred') });
+      setTransferDialogOpen(false);
+      setTransferSourceDeviceId(null);
+      fetchSessions();
+    }
+  };
+
   const filteredDevices = devices.filter(d => {
     if (filter === 'all') return true;
     return d.type === filter;
@@ -413,7 +449,7 @@ export default function Devices() {
             onPause={() => handlePauseSession(device.id)}
             onResume={() => handleResumeSession(device.id)}
             onEnd={() => handleEndSession(device.id)}
-            onTransfer={() => {}}
+            onTransfer={() => handleOpenTransfer(device.id)}
           />
         ))}
       </div>
@@ -430,6 +466,16 @@ export default function Devices() {
           )}
         </div>
       )}
+
+      {/* Transfer Session Dialog */}
+      <TransferSessionDialog
+        open={transferDialogOpen}
+        onOpenChange={setTransferDialogOpen}
+        sourceDevice={devices.find(d => d.id === transferSourceDeviceId) || null}
+        availableDevices={devices.filter(d => d.id !== transferSourceDeviceId && !sessions[d.id])}
+        onTransfer={handleTransferSession}
+        isLoading={transferLoading}
+      />
     </div>
   );
 }

@@ -61,6 +61,10 @@ export const ar = {
   duration: 'المدة',
   cost: 'التكلفة',
   ratePlan: 'خطة التسعير',
+  transferSession: 'نقل الجلسة',
+  from: 'من',
+  to: 'إلى',
+  noAvailableDevices: 'لا توجد أجهزة متاحة للنقل',
   
   // Tickets
   ticket: 'فاتورة',
@@ -95,6 +99,7 @@ export const ar = {
   sessionPaused: 'تم إيقاف الجلسة مؤقتاً',
   sessionResumed: 'تم استئناف الجلسة',
   sessionEnded: 'تم إنهاء الجلسة',
+  sessionTransferred: 'تم نقل الجلسة بنجاح',
   paymentSuccess: 'تم الدفع بنجاح',
   error: 'حدث خطأ',
   
