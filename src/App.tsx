@@ -13,6 +13,7 @@ import Products from "./pages/Products";
 import Tickets from "./pages/Tickets";
 import Reports from "./pages/Reports";
 import Shifts from "./pages/Shifts";
+import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
