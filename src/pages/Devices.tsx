@@ -5,6 +5,7 @@ import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { DeviceCard } from '@/components/devices/DeviceCard';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -63,6 +64,11 @@ export default function Devices() {
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [transferSourceDeviceId, setTransferSourceDeviceId] = useState<string | null>(null);
   const [transferLoading, setTransferLoading] = useState(false);
+  
+  // End session confirmation state
+  const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
+  const [endSessionDeviceId, setEndSessionDeviceId] = useState<string | null>(null);
+  const [endSessionLoading, setEndSessionLoading] = useState(false);
   
   // New device form
   const [newDevice, setNewDevice] = useState({
@@ -241,9 +247,18 @@ export default function Devices() {
     }
   };
 
-  const handleEndSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
+  const handleEndSessionClick = (deviceId: string) => {
+    setEndSessionDeviceId(deviceId);
+    setEndSessionDialogOpen(true);
+  };
+
+  const handleConfirmEndSession = async () => {
+    if (!endSessionDeviceId) return;
+    
+    const session = sessions[endSessionDeviceId];
     if (!session) return;
+
+    setEndSessionLoading(true);
 
     let totalPaused = session.paused_seconds;
     if (session.status === 'paused' && session.pause_started_at) {
@@ -261,10 +276,14 @@ export default function Devices() {
       })
       .eq('id', session.id);
 
+    setEndSessionLoading(false);
+
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } else {
       toast({ title: t('sessionEnded') });
+      setEndSessionDialogOpen(false);
+      setEndSessionDeviceId(null);
       fetchSessions();
     }
   };
@@ -448,7 +467,7 @@ export default function Devices() {
             onStart={() => handleStartSession(device.id)}
             onPause={() => handlePauseSession(device.id)}
             onResume={() => handleResumeSession(device.id)}
-            onEnd={() => handleEndSession(device.id)}
+            onEnd={() => handleEndSessionClick(device.id)}
             onTransfer={() => handleOpenTransfer(device.id)}
           />
         ))}
@@ -466,6 +485,18 @@ export default function Devices() {
           )}
         </div>
       )}
+
+      {/* End Session Confirmation Dialog */}
+      <ConfirmDialog
+        open={endSessionDialogOpen}
+        onOpenChange={setEndSessionDialogOpen}
+        title="إنهاء الجلسة"
+        description={`هل أنت متأكد من إنهاء جلسة ${devices.find(d => d.id === endSessionDeviceId)?.name || ''}؟ سيتم احتساب التكلفة النهائية.`}
+        confirmText="إنهاء الجلسة"
+        onConfirm={handleConfirmEndSession}
+        variant="destructive"
+        isLoading={endSessionLoading}
+      />
 
       {/* Transfer Session Dialog */}
       <TransferSessionDialog
