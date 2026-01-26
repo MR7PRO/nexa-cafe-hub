@@ -32,6 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DollarSign,
   Receipt,
@@ -114,6 +115,10 @@ export default function Settings() {
     location: '',
     default_rate_plan_id: '',
   });
+
+  // Deactivate device confirmation state
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [deviceToDeactivate, setDeviceToDeactivate] = useState<Device | null>(null);
 
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -427,6 +432,17 @@ export default function Settings() {
     setShowDeviceDialog(true);
   };
 
+  const handleToggleDeviceClick = (device: Device) => {
+    if (device.is_active) {
+      // Show confirmation dialog before deactivating
+      setDeviceToDeactivate(device);
+      setDeactivateDialogOpen(true);
+    } else {
+      // Reactivating doesn't need confirmation
+      handleToggleDevice(device);
+    }
+  };
+
   const handleToggleDevice = async (device: Device) => {
     const { error } = await supabase
       .from('devices')
@@ -436,6 +452,8 @@ export default function Settings() {
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } else {
+      setDeactivateDialogOpen(false);
+      setDeviceToDeactivate(null);
       fetchDevices();
     }
   };
@@ -766,7 +784,7 @@ export default function Settings() {
                             </Button>
                             <Switch
                               checked={device.is_active}
-                              onCheckedChange={() => handleToggleDevice(device)}
+                              onCheckedChange={() => handleToggleDeviceClick(device)}
                             />
                           </div>
                         </TableCell>
@@ -1011,6 +1029,17 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Deactivate Device Confirmation Dialog */}
+      <ConfirmDialog
+        open={deactivateDialogOpen}
+        onOpenChange={setDeactivateDialogOpen}
+        title="تعطيل الجهاز"
+        description={`هل أنت متأكد من تعطيل الجهاز "${deviceToDeactivate?.name || ''}"؟ لن يظهر في قائمة الأجهزة النشطة.`}
+        confirmText="تعطيل"
+        onConfirm={() => deviceToDeactivate && handleToggleDevice(deviceToDeactivate)}
+        variant="destructive"
+      />
     </div>
   );
 }
