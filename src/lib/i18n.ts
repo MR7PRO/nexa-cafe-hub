@@ -98,6 +98,32 @@ export const ar = {
   paymentSuccess: 'تم الدفع بنجاح',
   error: 'حدث خطأ',
   
+  // Shifts
+  shift: 'وردية',
+  openShift: 'فتح وردية',
+  closeShift: 'إغلاق وردية',
+  currentShift: 'الوردية الحالية',
+  shiftHistory: 'سجل الورديات',
+  openingCash: 'النقد الافتتاحي',
+  closingCash: 'النقد الختامي',
+  expectedCash: 'النقد المتوقع',
+  actualCash: 'النقد الفعلي',
+  difference: 'الفرق',
+  shiftDuration: 'مدة الوردية',
+  shiftOpened: 'تم فتح الوردية',
+  shiftClosed: 'تم إغلاق الوردية',
+  noOpenShift: 'لا توجد وردية مفتوحة',
+  shiftAlreadyOpen: 'يوجد وردية مفتوحة بالفعل',
+  cashIn: 'النقد الداخل',
+  cashOut: 'النقد الخارج',
+  shiftSummary: 'ملخص الوردية',
+  employee: 'الموظف',
+  openTime: 'وقت الفتح',
+  closeTime: 'وقت الإغلاق',
+  surplus: 'فائض',
+  shortage: 'عجز',
+  balanced: 'متوازن',
+  
   // Placeholders
   searchProducts: 'بحث عن منتج...',
   selectRatePlan: 'اختر خطة التسعير',
@@ -107,6 +133,7 @@ export const ar = {
   noActiveSessions: 'لا توجد جلسات نشطة',
   noProducts: 'لا توجد منتجات',
   noTickets: 'لا توجد فواتير',
+  noShifts: 'لا توجد ورديات',
 };
 
 export type TranslationKey = keyof typeof ar;
