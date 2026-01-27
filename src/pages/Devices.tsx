@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Plus, Monitor, Gamepad2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -8,6 +8,7 @@ import { TransferSessionDialog } from '@/components/devices/TransferSessionDialo
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import {
   Dialog,
   DialogContent,
@@ -77,9 +78,52 @@ export default function Devices() {
     location: '',
     default_rate_plan_id: '',
   });
+  // Selected device for keyboard shortcuts
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { user, role } = useAuth();
+
+  // Keyboard shortcut handlers
+  const handleKeyboardStartSession = useCallback(() => {
+    // Find first idle device or use selected device
+    const targetDevice = selectedDeviceId 
+      ? devices.find(d => d.id === selectedDeviceId && !sessions[d.id])
+      : devices.find(d => !sessions[d.id]);
+    
+    if (targetDevice) {
+      handleStartSession(targetDevice.id);
+    }
+  }, [devices, sessions, selectedDeviceId]);
+
+  const handleKeyboardEndSession = useCallback(() => {
+    // Find first active device or use selected device
+    const targetDevice = selectedDeviceId 
+      ? devices.find(d => d.id === selectedDeviceId && sessions[d.id])
+      : devices.find(d => sessions[d.id]?.status === 'running' || sessions[d.id]?.status === 'paused');
+    
+    if (targetDevice) {
+      handleEndSessionClick(targetDevice.id);
+    }
+  }, [devices, sessions, selectedDeviceId]);
+
+  const handleKeyboardPauseSession = useCallback(() => {
+    // Find first running device or use selected device
+    const targetDevice = selectedDeviceId 
+      ? devices.find(d => d.id === selectedDeviceId && sessions[d.id]?.status === 'running')
+      : devices.find(d => sessions[d.id]?.status === 'running');
+    
+    if (targetDevice) {
+      handlePauseSession(targetDevice.id);
+    }
+  }, [devices, sessions, selectedDeviceId]);
+
+  // Register keyboard shortcuts
+  useKeyboardShortcuts({
+    onStartSession: handleKeyboardStartSession,
+    onEndSession: handleKeyboardEndSession,
+    onPauseSession: handleKeyboardPauseSession,
+  });
 
   useEffect(() => {
     fetchData();
