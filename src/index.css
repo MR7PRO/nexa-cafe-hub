@@ -4,34 +4,34 @@
 
 /* Nexa Cafe Design System - Dark Gaming Theme with Arabic RTL Support */
 
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
     /* Core Colors - Dark Gaming Theme */
-    --background: 220 25% 6%;
+    --background: 230 25% 5%;
     --foreground: 210 40% 96%;
 
-    --card: 220 25% 10%;
+    --card: 230 25% 8%;
     --card-foreground: 210 40% 96%;
 
-    --popover: 220 25% 8%;
+    --popover: 230 25% 6%;
     --popover-foreground: 210 40% 96%;
 
     /* Primary - Electric Cyan */
-    --primary: 187 100% 50%;
-    --primary-foreground: 220 25% 6%;
+    --primary: 190 100% 50%;
+    --primary-foreground: 230 25% 5%;
 
     /* Secondary - Deep Blue */
-    --secondary: 220 30% 18%;
+    --secondary: 230 30% 15%;
     --secondary-foreground: 210 40% 96%;
 
     /* Muted - Subtle Gray */
-    --muted: 220 20% 16%;
+    --muted: 230 20% 14%;
     --muted-foreground: 215 20% 55%;
 
     /* Accent - Purple Glow */
-    --accent: 270 70% 55%;
+    --accent: 270 80% 60%;
     --accent-foreground: 210 40% 98%;
 
     /* Destructive - Warm Red */
@@ -43,53 +43,56 @@
     --success-foreground: 210 40% 98%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 220 25% 6%;
+    --warning-foreground: 230 25% 5%;
 
     --info: 200 100% 50%;
-    --info-foreground: 220 25% 6%;
+    --info-foreground: 230 25% 5%;
 
     /* UI Elements */
-    --border: 220 20% 18%;
-    --input: 220 25% 14%;
-    --ring: 187 100% 50%;
+    --border: 230 20% 15%;
+    --input: 230 25% 12%;
+    --ring: 190 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    /* Custom Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(187 100% 50%), hsl(200 100% 45%));
+    /* Custom Gradients - Match Logo */
+    --gradient-primary: linear-gradient(135deg, hsl(190 100% 50%), hsl(270 80% 60%));
+    --gradient-logo: linear-gradient(135deg, hsl(190 100% 55%) 0%, hsl(220 100% 60%) 50%, hsl(270 80% 60%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(150 70% 45%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(45 100% 55%));
-    --gradient-card: linear-gradient(145deg, hsl(220 25% 12%), hsl(220 25% 8%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 25% 8%) 0%, hsl(220 30% 12%) 50%, hsl(187 30% 15%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(230 25% 10%), hsl(230 25% 6%));
+    --gradient-hero: linear-gradient(135deg, hsl(230 25% 6%) 0%, hsl(230 30% 10%) 50%, hsl(270 20% 12%) 100%);
 
-    /* Shadows */
-    --shadow-glow-cyan: 0 0 20px hsl(187 100% 50% / 0.3), 0 0 40px hsl(187 100% 50% / 0.1);
+    /* Shadows - Match Logo Glow */
+    --shadow-glow-cyan: 0 0 25px hsl(190 100% 50% / 0.4), 0 0 50px hsl(190 100% 50% / 0.15);
+    --shadow-glow-purple: 0 0 25px hsl(270 80% 60% / 0.4), 0 0 50px hsl(270 80% 60% / 0.15);
+    --shadow-glow-logo: 0 0 30px hsl(190 100% 50% / 0.3), 0 0 60px hsl(270 80% 60% / 0.2);
     --shadow-glow-success: 0 0 20px hsl(160 84% 39% / 0.4), 0 0 40px hsl(160 84% 39% / 0.1);
     --shadow-glow-warning: 0 0 20px hsl(38 92% 50% / 0.4), 0 0 40px hsl(38 92% 50% / 0.1);
     --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.5);
-    --shadow-elevated: 0 8px 32px -8px hsl(0 0% 0% / 0.6);
+    --shadow-elevated: 0 8px 40px -8px hsl(0 0% 0% / 0.7);
 
     /* Sidebar */
-    --sidebar-background: 220 25% 8%;
+    --sidebar-background: 230 25% 6%;
     --sidebar-foreground: 210 40% 90%;
-    --sidebar-primary: 187 100% 50%;
-    --sidebar-primary-foreground: 220 25% 6%;
-    --sidebar-accent: 220 25% 14%;
+    --sidebar-primary: 190 100% 50%;
+    --sidebar-primary-foreground: 230 25% 5%;
+    --sidebar-accent: 230 25% 12%;
     --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 220 20% 15%;
-    --sidebar-ring: 187 100% 50%;
+    --sidebar-border: 230 20% 12%;
+    --sidebar-ring: 190 100% 50%;
 
     /* Chart Colors */
-    --chart-1: 187 100% 50%;
+    --chart-1: 190 100% 50%;
     --chart-2: 160 84% 39%;
     --chart-3: 38 92% 50%;
-    --chart-4: 270 70% 55%;
+    --chart-4: 270 80% 60%;
     --chart-5: 0 72% 55%;
   }
 
   .dark {
     /* Dark mode is default, same values */
-    --background: 220 25% 6%;
+    --background: 230 25% 5%;
     --foreground: 210 40% 96%;
   }
 }
@@ -105,11 +108,13 @@
   }
 
   body {
-    @apply bg-background text-foreground font-cairo antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Tajawal', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     background-image: 
-      radial-gradient(ellipse at top, hsl(220 30% 12%) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom right, hsl(187 40% 10%) 0%, transparent 40%);
+      radial-gradient(ellipse at top, hsl(270 30% 10%) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, hsl(190 40% 8%) 0%, transparent 40%),
+      radial-gradient(ellipse at top left, hsl(230 30% 8%) 0%, transparent 60%);
     background-attachment: fixed;
   }
 
@@ -145,6 +150,14 @@
     box-shadow: var(--shadow-glow-cyan);
   }
 
+  .glow-purple {
+    box-shadow: var(--shadow-glow-purple);
+  }
+
+  .glow-logo {
+    box-shadow: var(--shadow-glow-logo);
+  }
+
   .glow-success {
     box-shadow: var(--shadow-glow-success);
   }
@@ -161,16 +174,56 @@
     background-clip: text;
   }
 
+  .text-gradient-logo {
+    background: var(--gradient-logo);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gaming Font for Headers */
+  .font-gaming {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
   /* Glass Effect */
   .glass {
     background: hsl(var(--card) / 0.6);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
     border: 1px solid hsl(var(--border) / 0.5);
   }
 
   /* Card Gradient */
   .card-gradient {
     background: var(--gradient-card);
+  }
+
+  /* Logo Animation */
+  .logo-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* Border Gradient */
+  .border-gradient {
+    position: relative;
+  }
+
+  .border-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-logo);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
   }
 
   /* Status Colors */

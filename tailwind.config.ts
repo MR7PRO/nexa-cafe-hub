@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        cairo: ['Cairo', 'sans-serif'],
+        sans: ['Tajawal', 'sans-serif'],
+        gaming: ['Orbitron', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
@@ -111,11 +112,13 @@ export default {
         "slide-up": "slide-up 0.3s ease-out",
       },
       boxShadow: {
-        "glow-cyan": "0 0 20px hsl(187 100% 50% / 0.3), 0 0 40px hsl(187 100% 50% / 0.1)",
+        "glow-cyan": "0 0 25px hsl(190 100% 50% / 0.4), 0 0 50px hsl(190 100% 50% / 0.15)",
+        "glow-purple": "0 0 25px hsl(270 80% 60% / 0.4), 0 0 50px hsl(270 80% 60% / 0.15)",
+        "glow-logo": "0 0 30px hsl(190 100% 50% / 0.3), 0 0 60px hsl(270 80% 60% / 0.2)",
         "glow-success": "0 0 20px hsl(160 84% 39% / 0.4), 0 0 40px hsl(160 84% 39% / 0.1)",
         "glow-warning": "0 0 20px hsl(38 92% 50% / 0.4), 0 0 40px hsl(38 92% 50% / 0.1)",
         "card": "0 4px 24px -4px hsl(0 0% 0% / 0.5)",
-        "elevated": "0 8px 32px -8px hsl(0 0% 0% / 0.6)",
+        "elevated": "0 8px 40px -8px hsl(0 0% 0% / 0.7)",
       },
     },
   },
