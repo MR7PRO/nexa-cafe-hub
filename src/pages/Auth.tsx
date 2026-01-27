@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import logo from '@/assets/logo.png';
 
 const loginSchema = z.object({
   email: z.string().email('بريد إلكتروني غير صالح'),
@@ -95,20 +96,34 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md animate-slide-up">
+    <div className="flex min-h-screen items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="w-full max-w-md animate-slide-up relative z-10">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 shadow-glow-cyan">
-            <Gamepad2 className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-6 relative">
+            <img 
+              src={logo} 
+              alt="Nexa Cafe Logo" 
+              className="w-28 h-28 mx-auto logo-float drop-shadow-2xl"
+              style={{ filter: 'drop-shadow(0 0 30px hsl(190 100% 50% / 0.4)) drop-shadow(0 0 60px hsl(270 80% 60% / 0.3))' }}
+            />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">{t('appName')}</h1>
-          <p className="mt-2 text-muted-foreground">نظام إدارة المقهى</p>
+          <h1 className="text-3xl font-bold text-gradient-logo font-gaming tracking-wider">{t('appName')}</h1>
+          <p className="mt-3 text-muted-foreground text-lg">نظام إدارة المقهى</p>
         </div>
 
         {/* Form Card */}
-        <div className="rounded-2xl border border-border bg-card/50 p-8 shadow-elevated backdrop-blur-sm">
-          <h2 className="mb-6 text-xl font-semibold text-foreground">
+        <div className="rounded-2xl border-gradient bg-card/60 p-8 shadow-elevated backdrop-blur-xl relative overflow-hidden">
+          {/* Gradient border glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+          
+          <h2 className="mb-6 text-xl font-bold text-foreground relative">
             {isLogin ? t('login') : t('signup')}
           </h2>
 
@@ -173,23 +188,32 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full touch-target"
+              className="w-full touch-target text-base font-bold relative overflow-hidden group"
               disabled={loading}
+              style={{ background: 'linear-gradient(135deg, hsl(190 100% 50%), hsl(270 80% 60%))' }}
             >
-              {loading ? 'جاري التحميل...' : isLogin ? t('login') : t('signup')}
+              <span className="relative z-10">
+                {loading ? 'جاري التحميل...' : isLogin ? t('login') : t('signup')}
+              </span>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center relative">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-primary hover:text-accent transition-colors"
             >
               {isLogin ? 'ليس لديك حساب؟ سجل الآن' : 'لديك حساب؟ سجل دخولك'}
             </button>
           </div>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          نظام إدارة متكامل للمقاهي ومراكز الألعاب
+        </p>
       </div>
     </div>
   );

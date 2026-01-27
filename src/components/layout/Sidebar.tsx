@@ -9,13 +9,13 @@ import {
   Wallet, 
   BarChart3, 
   Settings,
-  LogOut,
-  Gamepad2
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; adminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
@@ -37,21 +37,24 @@ export function Sidebar() {
   const roleColor = role === 'admin' ? 'text-primary' : role === 'manager' ? 'text-accent' : 'text-muted-foreground';
 
   return (
-    <aside className="fixed right-0 top-0 z-40 h-screen w-64 border-l border-border bg-sidebar">
+    <aside className="fixed right-0 top-0 z-40 h-screen w-64 border-l border-border bg-sidebar/95 backdrop-blur-xl">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Gamepad2 className="h-6 w-6 text-primary" />
-          </div>
+        <div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+          <img 
+            src={logo} 
+            alt="Nexa Cafe" 
+            className="w-12 h-12"
+            style={{ filter: 'drop-shadow(0 0 10px hsl(190 100% 50% / 0.3))' }}
+          />
           <div>
-            <h1 className="text-lg font-bold text-foreground">{t('appName')}</h1>
-            <p className="text-xs text-muted-foreground">نظام إدارة المقهى</p>
+            <h1 className="text-lg font-bold text-gradient-logo font-gaming tracking-wide">{t('appName')}</h1>
+            <p className="text-[10px] text-muted-foreground">نظام إدارة المقهى</p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => {
             if (item.adminOnly && role !== 'admin') return null;
             
@@ -63,13 +66,14 @@ export function Sidebar() {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200',
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-primary/10 text-primary shadow-glow-cyan'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-gradient-to-l from-primary/20 to-accent/10 text-primary border border-primary/20'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 )}
+                style={isActive ? { boxShadow: '0 0 20px hsl(190 100% 50% / 0.15)' } : undefined}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
                 <span>{t(item.label as any)}</span>
               </Link>
             );
@@ -77,23 +81,26 @@ export function Sidebar() {
         </nav>
 
         {/* User Info */}
-        <div className="border-t border-border p-4">
-          <div className="mb-3 flex items-center gap-3 rounded-lg bg-card/50 p-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+        <div className="border-t border-border/50 p-3">
+          <div className="mb-3 flex items-center gap-3 rounded-xl bg-gradient-to-l from-card to-card/50 p-3 border border-border/30">
+            <div 
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-primary-foreground"
+              style={{ background: 'linear-gradient(135deg, hsl(190 100% 50%), hsl(270 80% 60%))' }}
+            >
               {profile?.name?.charAt(0) || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
+              <p className="truncate text-sm font-bold text-foreground">
                 {profile?.name || 'مستخدم'}
               </p>
-              <p className={cn('text-xs', roleColor)}>{roleLabel}</p>
+              <p className={cn('text-xs font-medium', roleColor)}>{roleLabel}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={signOut}
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
           >
             <LogOut className="h-4 w-4" />
             {t('logout')}
