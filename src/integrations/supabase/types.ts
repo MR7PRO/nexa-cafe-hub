@@ -262,6 +262,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          controller_count: number | null
           created_at: string
           created_by: string | null
           device_id: string
@@ -270,10 +271,13 @@ export type Database = {
           pause_started_at: string | null
           paused_seconds: number
           rate_plan_id: string
+          session_mode: string | null
           start_time: string
           status: Database["public"]["Enums"]["session_status"]
+          timer_minutes: number | null
         }
         Insert: {
+          controller_count?: number | null
           created_at?: string
           created_by?: string | null
           device_id: string
@@ -282,10 +286,13 @@ export type Database = {
           pause_started_at?: string | null
           paused_seconds?: number
           rate_plan_id: string
+          session_mode?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["session_status"]
+          timer_minutes?: number | null
         }
         Update: {
+          controller_count?: number | null
           created_at?: string
           created_by?: string | null
           device_id?: string
@@ -294,8 +301,10 @@ export type Database = {
           pause_started_at?: string | null
           paused_seconds?: number
           rate_plan_id?: string
+          session_mode?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["session_status"]
+          timer_minutes?: number | null
         }
         Relationships: [
           {
