@@ -65,6 +65,13 @@ export const ar = {
   from: 'من',
   to: 'إلى',
   noAvailableDevices: 'لا توجد أجهزة متاحة للنقل',
+  sessionMode: 'نوع الجلسة',
+  meterMode: 'عداد الوقت',
+  timerMode: 'تايمر تنازلي',
+  controllerCount: 'عدد الأيدي',
+  controllers: 'أيدي',
+  remainingTime: 'الوقت المتبقي',
+  timerEnded: 'انتهى الوقت',
   
   // Tickets
   ticket: 'فاتورة',

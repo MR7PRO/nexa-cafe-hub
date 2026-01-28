@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { DeviceCard } from '@/components/devices/DeviceCard';
+import { StartSessionDialog } from '@/components/devices/StartSessionDialog';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +42,9 @@ interface Session {
   paused_seconds: number;
   pause_started_at: string | null;
   status: 'running' | 'paused' | 'ended';
+  session_mode?: 'meter' | 'timer';
+  timer_minutes?: number | null;
+  controller_count?: number;
   rate_plan: {
     name: string;
     price_per_hour_ils: number;
@@ -60,6 +64,11 @@ export default function Devices() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'playstation' | 'pc'>('all');
+  
+  // Start session dialog state
+  const [startSessionDialogOpen, setStartSessionDialogOpen] = useState(false);
+  const [startSessionDevice, setStartSessionDevice] = useState<Device | null>(null);
+  const [startSessionLoading, setStartSessionLoading] = useState(false);
   
   // Transfer dialog state
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -92,7 +101,7 @@ export default function Devices() {
       : devices.find(d => !sessions[d.id]);
     
     if (targetDevice) {
-      handleStartSession(targetDevice.id);
+      handleOpenStartSession(targetDevice.id);
     }
   }, [devices, sessions, selectedDeviceId]);
 
@@ -169,6 +178,9 @@ export default function Devices() {
         paused_seconds,
         pause_started_at,
         status,
+        session_mode,
+        timer_minutes,
+        controller_count,
         rate_plans!inner (
           name,
           price_per_hour_ils
@@ -222,27 +234,41 @@ export default function Devices() {
     }
   };
 
-  const handleStartSession = async (deviceId: string) => {
+  const handleOpenStartSession = (deviceId: string) => {
     const device = devices.find(d => d.id === deviceId);
-    if (!device) return;
-
-    const ratePlanId = device.default_rate_plan_id || ratePlans[0]?.id;
-
-    if (!ratePlanId) {
-      toast({ title: t('error'), description: 'لا توجد خطة تسعير', variant: 'destructive' });
-      return;
+    if (device) {
+      setStartSessionDevice(device);
+      setStartSessionDialogOpen(true);
     }
+  };
+
+  const handleStartSession = async (options: {
+    ratePlanId: string;
+    sessionMode: 'meter' | 'timer';
+    timerMinutes?: number;
+    controllerCount: number;
+  }) => {
+    if (!startSessionDevice) return;
+
+    setStartSessionLoading(true);
 
     const { error } = await supabase.from('sessions').insert({
-      device_id: deviceId,
-      rate_plan_id: ratePlanId,
+      device_id: startSessionDevice.id,
+      rate_plan_id: options.ratePlanId,
       created_by: user?.id,
+      session_mode: options.sessionMode,
+      timer_minutes: options.timerMinutes || null,
+      controller_count: options.controllerCount,
     });
+
+    setStartSessionLoading(false);
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: t('sessionStarted'), description: device.name });
+      toast({ title: t('sessionStarted'), description: startSessionDevice.name });
+      setStartSessionDialogOpen(false);
+      setStartSessionDevice(null);
       fetchSessions();
     }
   };
@@ -508,7 +534,7 @@ export default function Devices() {
             key={device.id}
             device={device}
             session={sessions[device.id] || null}
-            onStart={() => handleStartSession(device.id)}
+            onStart={() => handleOpenStartSession(device.id)}
             onPause={() => handlePauseSession(device.id)}
             onResume={() => handleResumeSession(device.id)}
             onEnd={() => handleEndSessionClick(device.id)}
@@ -550,6 +576,16 @@ export default function Devices() {
         availableDevices={devices.filter(d => d.id !== transferSourceDeviceId && !sessions[d.id])}
         onTransfer={handleTransferSession}
         isLoading={transferLoading}
+      />
+
+      {/* Start Session Dialog */}
+      <StartSessionDialog
+        open={startSessionDialogOpen}
+        onOpenChange={setStartSessionDialogOpen}
+        device={startSessionDevice}
+        ratePlans={ratePlans}
+        onStart={handleStartSession}
+        isLoading={startSessionLoading}
       />
     </div>
   );

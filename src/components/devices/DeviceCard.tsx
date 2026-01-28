@@ -1,4 +1,4 @@
-import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight } from 'lucide-react';
+import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t, formatILS, formatDuration } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,9 @@ interface Session {
   paused_seconds: number;
   pause_started_at: string | null;
   status: 'running' | 'paused' | 'ended';
+  session_mode?: 'meter' | 'timer';
+  timer_minutes?: number | null;
+  controller_count?: number;
   rate_plan: {
     name: string;
     price_per_hour_ils: number;
@@ -41,16 +44,22 @@ export function DeviceCard({
   onTransfer,
 }: DeviceCardProps) {
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [remainingMinutes, setRemainingMinutes] = useState(0);
   const [currentCost, setCurrentCost] = useState(0);
+  const [timerEnded, setTimerEnded] = useState(false);
 
   const isRunning = session?.status === 'running';
   const isPaused = session?.status === 'paused';
   const isIdle = !session || session.status === 'ended';
+  const isTimerMode = session?.session_mode === 'timer';
+  const controllerCount = session?.controller_count || 1;
 
   useEffect(() => {
     if (!session || session.status === 'ended') {
       setElapsedMinutes(0);
+      setRemainingMinutes(0);
       setCurrentCost(0);
+      setTimerEnded(false);
       return;
     }
 
@@ -69,9 +78,17 @@ export function DeviceCard({
       const minutes = Math.max(0, Math.floor(activeMs / 60000));
       setElapsedMinutes(minutes);
 
-      // Calculate cost
+      // Calculate remaining time for timer mode
+      if (isTimerMode && session.timer_minutes) {
+        const remaining = session.timer_minutes - minutes;
+        setRemainingMinutes(Math.max(0, remaining));
+        setTimerEnded(remaining <= 0);
+      }
+
+      // Calculate cost with controller multiplier
       const pricePerHour = session.rate_plan?.price_per_hour_ils || 15;
-      const cost = (minutes / 60) * pricePerHour;
+      const multiplier = device.type === 'playstation' ? controllerCount : 1;
+      const cost = (minutes / 60) * pricePerHour * multiplier;
       setCurrentCost(cost);
     };
 
@@ -79,19 +96,25 @@ export function DeviceCard({
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session, isTimerMode, controllerCount, device.type]);
 
   const Icon = device.type === 'playstation' ? Gamepad2 : Monitor;
 
   const statusLabel = isRunning ? t('running') : isPaused ? t('paused') : t('idle');
   const statusClass = isRunning ? 'status-running' : isPaused ? 'status-paused' : 'status-idle';
 
+  // Timer progress percentage
+  const timerProgress = isTimerMode && session?.timer_minutes 
+    ? Math.min(100, (elapsedMinutes / session.timer_minutes) * 100)
+    : 0;
+
   return (
     <div
       className={cn(
         'device-card',
         isRunning && 'device-card-running',
-        isPaused && 'device-card-paused'
+        isPaused && 'device-card-paused',
+        timerEnded && 'animate-pulse border-destructive'
       )}
     >
       {/* Header */}
@@ -110,29 +133,78 @@ export function DeviceCard({
             <p className="text-sm text-muted-foreground">{device.location || 'الصالة الرئيسية'}</p>
           </div>
         </div>
-        <span className={cn('rounded-full px-3 py-1 text-xs font-medium', statusClass)}>
-          {statusLabel}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span className={cn('rounded-full px-3 py-1 text-xs font-medium', statusClass)}>
+            {statusLabel}
+          </span>
+          {(isRunning || isPaused) && session && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              {isTimerMode ? <Timer className="h-3 w-3" /> : <Gauge className="h-3 w-3" />}
+              {isTimerMode ? 'تايمر' : 'عداد'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Session Info */}
       {(isRunning || isPaused) && session && (
-        <div className="mt-4 rounded-lg bg-muted/50 p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t('duration')}</span>
-            <span className="font-mono text-sm font-medium text-foreground">
-              {formatDuration(elapsedMinutes)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t('cost')}</span>
-            <span className="font-mono text-lg font-bold text-primary">
-              {formatILS(currentCost)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t('ratePlan')}</span>
-            <span className="text-sm text-foreground">{session.rate_plan?.name || 'عادي'}</span>
+        <div className="mt-4 space-y-3">
+          {/* Timer Progress Bar */}
+          {isTimerMode && (
+            <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+              <div 
+                className={cn(
+                  "h-full transition-all duration-1000",
+                  timerEnded ? "bg-destructive" : timerProgress > 80 ? "bg-warning" : "bg-primary"
+                )}
+                style={{ width: `${timerProgress}%` }}
+              />
+            </div>
+          )}
+
+          <div className="rounded-lg bg-muted/50 p-3">
+            {/* Time Display */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                {isTimerMode ? t('remainingTime') : t('duration')}
+              </span>
+              <span className={cn(
+                "font-mono text-sm font-medium",
+                timerEnded ? "text-destructive animate-pulse" : "text-foreground"
+              )}>
+                {isTimerMode 
+                  ? (timerEnded ? t('timerEnded') : formatDuration(remainingMinutes))
+                  : formatDuration(elapsedMinutes)
+                }
+              </span>
+            </div>
+
+            {/* Controller Count (PlayStation only) */}
+            {device.type === 'playstation' && controllerCount > 1 && (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {t('controllerCount')}
+                </span>
+                <span className="text-sm font-medium text-accent">
+                  {controllerCount} {t('controllers')}
+                </span>
+              </div>
+            )}
+
+            {/* Cost */}
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('cost')}</span>
+              <span className="font-mono text-lg font-bold text-primary">
+                {formatILS(currentCost)}
+              </span>
+            </div>
+
+            {/* Rate Plan */}
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t('ratePlan')}</span>
+              <span className="text-sm text-foreground">{session.rate_plan?.name || 'عادي'}</span>
+            </div>
           </div>
         </div>
       )}
