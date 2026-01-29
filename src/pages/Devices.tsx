@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DeviceCard } from '@/components/devices/DeviceCard';
 import { StartSessionDialog } from '@/components/devices/StartSessionDialog';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
+import { ExtendTimerDialog } from '@/components/devices/ExtendTimerDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -79,6 +80,11 @@ export default function Devices() {
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
   const [endSessionDeviceId, setEndSessionDeviceId] = useState<string | null>(null);
   const [endSessionLoading, setEndSessionLoading] = useState(false);
+  
+  // Extend timer dialog state
+  const [extendTimerDialogOpen, setExtendTimerDialogOpen] = useState(false);
+  const [extendTimerDeviceId, setExtendTimerDeviceId] = useState<string | null>(null);
+  const [extendTimerLoading, setExtendTimerLoading] = useState(false);
   
   // New device form
   const [newDevice, setNewDevice] = useState({
@@ -388,6 +394,51 @@ export default function Devices() {
     }
   };
 
+  // Extend timer handlers
+  const handleOpenExtendTimer = (deviceId: string) => {
+    setExtendTimerDeviceId(deviceId);
+    setExtendTimerDialogOpen(true);
+  };
+
+  const handleExtendTimer = async (additionalMinutes: number) => {
+    if (!extendTimerDeviceId) return;
+    
+    const session = sessions[extendTimerDeviceId];
+    if (!session || session.session_mode !== 'timer') return;
+
+    setExtendTimerLoading(true);
+
+    const newTimerMinutes = (session.timer_minutes || 0) + additionalMinutes;
+
+    const { error } = await supabase
+      .from('sessions')
+      .update({ timer_minutes: newTimerMinutes })
+      .eq('id', session.id);
+
+    setExtendTimerLoading(false);
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: t('sessionExtended'), description: `تم إضافة ${additionalMinutes} دقيقة` });
+      setExtendTimerDialogOpen(false);
+      setExtendTimerDeviceId(null);
+      fetchSessions();
+    }
+  };
+
+  // Calculate elapsed minutes for extend dialog
+  const getElapsedMinutes = (session: Session | undefined): number => {
+    if (!session) return 0;
+    const startTime = new Date(session.start_time).getTime();
+    const now = Date.now();
+    let pausedMs = (session.paused_seconds || 0) * 1000;
+    if (session.status === 'paused' && session.pause_started_at) {
+      pausedMs += now - new Date(session.pause_started_at).getTime();
+    }
+    return Math.floor((now - startTime - pausedMs) / 60000);
+  };
+
   const filteredDevices = devices.filter(d => {
     if (filter === 'all') return true;
     return d.type === filter;
@@ -539,6 +590,7 @@ export default function Devices() {
             onResume={() => handleResumeSession(device.id)}
             onEnd={() => handleEndSessionClick(device.id)}
             onTransfer={() => handleOpenTransfer(device.id)}
+            onExtendTimer={() => handleOpenExtendTimer(device.id)}
           />
         ))}
       </div>
@@ -586,6 +638,17 @@ export default function Devices() {
         ratePlans={ratePlans}
         onStart={handleStartSession}
         isLoading={startSessionLoading}
+      />
+
+      {/* Extend Timer Dialog */}
+      <ExtendTimerDialog
+        open={extendTimerDialogOpen}
+        onOpenChange={setExtendTimerDialogOpen}
+        deviceName={devices.find(d => d.id === extendTimerDeviceId)?.name || ''}
+        currentTimerMinutes={sessions[extendTimerDeviceId || '']?.timer_minutes || 0}
+        elapsedMinutes={getElapsedMinutes(sessions[extendTimerDeviceId || ''])}
+        onExtend={handleExtendTimer}
+        isLoading={extendTimerLoading}
       />
     </div>
   );

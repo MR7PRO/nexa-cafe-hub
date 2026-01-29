@@ -72,6 +72,9 @@ export const ar = {
   controllers: 'أيدي',
   remainingTime: 'الوقت المتبقي',
   timerEnded: 'انتهى الوقت',
+  extendTimer: 'تمديد الوقت',
+  extendMinutes: 'تمديد (دقائق)',
+  sessionExtended: 'تم تمديد الجلسة',
   
   // Tickets
   ticket: 'فاتورة',

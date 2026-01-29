@@ -1,4 +1,4 @@
-import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users } from 'lucide-react';
+import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t, formatILS, formatDuration } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ interface DeviceCardProps {
   onResume: () => void;
   onEnd: () => void;
   onTransfer: () => void;
+  onExtendTimer?: () => void;
 }
 
 export function DeviceCard({
@@ -42,6 +43,7 @@ export function DeviceCard({
   onResume,
   onEnd,
   onTransfer,
+  onExtendTimer,
 }: DeviceCardProps) {
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
@@ -242,9 +244,23 @@ export function DeviceCard({
           </>
         )}
         {(isRunning || isPaused) && (
-          <Button onClick={onTransfer} variant="outline" size="icon" className="touch-target">
-            <ArrowLeftRight className="h-4 w-4" />
-          </Button>
+          <>
+            {/* Extend Timer Button (only for timer mode) */}
+            {isTimerMode && onExtendTimer && (
+              <Button 
+                onClick={onExtendTimer} 
+                variant="outline" 
+                size="icon" 
+                className="touch-target border-primary/50 hover:bg-primary/10"
+                title={t('extendTimer')}
+              >
+                <Clock className="h-4 w-4 text-primary" />
+              </Button>
+            )}
+            <Button onClick={onTransfer} variant="outline" size="icon" className="touch-target">
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
+          </>
         )}
       </div>
     </div>
