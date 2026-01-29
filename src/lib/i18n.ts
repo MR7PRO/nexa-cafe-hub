@@ -183,6 +183,17 @@ export const ar = {
   roleUpdated: 'تم تحديث الصلاحية',
   cannotRemoveLastAdmin: 'لا يمكن إزالة آخر مدير',
   adminOnlyPage: 'هذه الصفحة متاحة للمديرين فقط',
+  
+  // Offline/Sync
+  offline: 'بدون اتصال',
+  online: 'متصل',
+  syncing: 'جاري المزامنة...',
+  syncComplete: 'تمت المزامنة',
+  syncFailed: 'فشلت المزامنة',
+  pendingChanges: 'تغييرات معلقة',
+  connectionRestored: 'تم استعادة الاتصال بالإنترنت',
+  workingOffline: 'أنت الآن بدون اتصال',
+  dataSavedLocally: 'البيانات محفوظة محلياً وستتم مزامنتها عند عودة الاتصال',
 };
 
 export type TranslationKey = keyof typeof ar;
