@@ -48,8 +48,8 @@ export function Sidebar() {
             style={{ filter: 'drop-shadow(0 0 10px hsl(190 100% 50% / 0.3))' }}
           />
           <div>
-            <h1 className="text-lg font-bold text-gradient-logo font-gaming tracking-wide">{t('appName')}</h1>
-            <p className="text-[10px] text-muted-foreground">نظام إدارة المقهى</p>
+            <h1 className="text-lg font-bold text-gradient-logo font-gaming tracking-wider">NexaCafe</h1>
+            <p className="text-[10px] text-muted-foreground">نيكسا كافيه • نظام إدارة مقهى</p>
           </div>
         </div>
 

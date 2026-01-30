@@ -114,8 +114,8 @@ export default function Auth() {
               style={{ filter: 'drop-shadow(0 0 30px hsl(190 100% 50% / 0.4)) drop-shadow(0 0 60px hsl(270 80% 60% / 0.3))' }}
             />
           </div>
-          <h1 className="text-3xl font-bold text-gradient-logo font-gaming tracking-wider">{t('appName')}</h1>
-          <p className="mt-3 text-muted-foreground text-lg">نظام إدارة المقهى</p>
+          <h1 className="text-4xl font-bold text-gradient-logo font-gaming tracking-widest">NexaCafe</h1>
+          <p className="mt-2 text-muted-foreground text-base">نيكسا كافيه • نظام إدارة مقهى</p>
         </div>
 
         {/* Form Card */}
