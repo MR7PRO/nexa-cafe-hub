@@ -26,6 +26,7 @@ export const ar = {
   expenses: 'المصروفات',
   reports: 'التقارير',
   settings: 'الإعدادات',
+  reservations: 'الحجوزات',
   
   // Dashboard
   todayRevenue: 'إيرادات اليوم',
