@@ -62,6 +62,81 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_balances: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          package_id: string
+          purchased_at: string
+          remaining_minutes: number
+          sold_by: string | null
+          total_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          package_id: string
+          purchased_at?: string
+          remaining_minutes: number
+          sold_by?: string | null
+          total_minutes: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          package_id?: string
+          purchased_at?: string
+          remaining_minutes?: number
+          sold_by?: string | null
+          total_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_balances_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_balances_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
       devices: {
         Row: {
           created_at: string
@@ -124,6 +199,36 @@ export type Database = {
           id?: string
           note?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      loyalty_packages: {
+        Row: {
+          bonus_hours: number
+          created_at: string
+          hours_included: number
+          id: string
+          is_active: boolean
+          name: string
+          price_ils: number
+        }
+        Insert: {
+          bonus_hours?: number
+          created_at?: string
+          hours_included: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price_ils: number
+        }
+        Update: {
+          bonus_hours?: number
+          created_at?: string
+          hours_included?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_ils?: number
         }
         Relationships: []
       }
