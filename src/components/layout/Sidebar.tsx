@@ -10,7 +10,8 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  CalendarDays
+  CalendarDays,
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -25,6 +26,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/tickets', icon: Receipt, label: 'tickets' },
   { href: '/products', icon: Package, label: 'products' },
   { href: '/reservations', icon: CalendarDays, label: 'reservations' },
+  { href: '/loyalty', icon: Heart, label: 'loyalty' },
   { href: '/shifts', icon: Clock, label: 'shifts' },
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
