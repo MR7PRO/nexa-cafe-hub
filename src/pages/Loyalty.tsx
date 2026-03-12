@@ -225,17 +225,17 @@ export default function Loyalty() {
         <StatCard
           title="إجمالي الزبائن"
           value={totalCustomers.toString()}
-          icon={Users}
+          icon={<Users className="h-5 w-5" />}
         />
         <StatCard
           title="الباقات المتوفرة"
           value={activePackages.length.toString()}
-          icon={Package}
+          icon={<Package className="h-5 w-5" />}
         />
         <StatCard
           title="الباقات النشطة"
           value={activePackages.length.toString()}
-          icon={Clock}
+          icon={<Clock className="h-5 w-5" />}
         />
       </div>
 
