@@ -20,6 +20,7 @@ import Shifts from "./pages/Shifts";
 import Expenses from "./pages/Expenses";
 import Settings from "./pages/Settings";
 import Reservations from "./pages/Reservations";
+import Loyalty from "./pages/Loyalty";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
