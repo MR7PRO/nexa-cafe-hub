@@ -27,6 +27,7 @@ export const ar = {
   reports: 'التقارير',
   settings: 'الإعدادات',
   reservations: 'الحجوزات',
+  loyalty: 'الولاء',
   
   // Dashboard
   todayRevenue: 'إيرادات اليوم',
