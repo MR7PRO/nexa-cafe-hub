@@ -10,7 +10,8 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  CalendarDays
+  CalendarDays,
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
