@@ -79,6 +79,7 @@ interface UserWithRole {
 export default function Settings() {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { mode, setMode, resolvedTheme } = useTheme();
 
   // Rate Plans
   const [ratePlans, setRatePlans] = useState<RatePlan[]>([]);
