@@ -46,7 +46,11 @@ import {
   Monitor,
   Gamepad2,
   MapPin,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import type { Tables, Json } from '@/integrations/supabase/types';
 
 type RatePlan = Tables<'rate_plans'>;
