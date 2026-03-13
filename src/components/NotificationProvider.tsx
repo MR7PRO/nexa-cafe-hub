@@ -1,6 +1,7 @@
 import { useNotifications } from '@/hooks/useNotifications';
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { permission, requestPermission } = useNotifications({
@@ -9,8 +10,109 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     sessionWarningMinutes: 60,
   });
 
+  const visualNotifiedRef = useRef<Set<string>>(new Set());
+
+  // Visual on-screen alerts for timer sessions
+  const checkTimerVisualAlerts = useCallback(async () => {
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select(`
+        id,
+        start_time,
+        paused_seconds,
+        pause_started_at,
+        status,
+        session_mode,
+        timer_minutes,
+        devices!inner(name)
+      `)
+      .eq('status', 'running')
+      .eq('session_mode', 'timer')
+      .not('timer_minutes', 'is', null);
+
+    if (!sessions) return;
+
+    const now = Date.now();
+
+    for (const session of sessions) {
+      if (!session.timer_minutes) continue;
+
+      const startTime = new Date(session.start_time).getTime();
+      let pausedMs = (session.paused_seconds || 0) * 1000;
+      if (session.pause_started_at) {
+        pausedMs += now - new Date(session.pause_started_at).getTime();
+      }
+      const elapsedMs = now - startTime - pausedMs;
+      const totalMs = session.timer_minutes * 60 * 1000;
+      const remainingMs = totalMs - elapsedMs;
+      const remainingMinutes = Math.floor(remainingMs / 60000);
+
+      const deviceName = (session.devices as { name: string })?.name || 'جهاز';
+
+      // 5-minute warning visual toast
+      const fiveMinKey = `visual-${session.id}-5min`;
+      if (remainingMinutes <= 5 && remainingMinutes > 0 && !visualNotifiedRef.current.has(fiveMinKey)) {
+        toast.warning(
+          `⏱️ جلسة "${deviceName}" ستنتهي خلال ${remainingMinutes} دقائق!`,
+          {
+            duration: 15000,
+            position: 'top-center',
+            style: { direction: 'rtl', fontSize: '16px' },
+          }
+        );
+        // Play sound
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.volume = 0.7;
+          audio.play().catch(() => {});
+        } catch {}
+        visualNotifiedRef.current.add(fiveMinKey);
+      }
+
+      // Timer ended visual toast
+      const endedKey = `visual-${session.id}-ended`;
+      if (remainingMs <= 0 && !visualNotifiedRef.current.has(endedKey)) {
+        toast.error(
+          `🔔 انتهت جلسة "${deviceName}"! يرجى إنهاء الجلسة.`,
+          {
+            duration: 30000,
+            position: 'top-center',
+            style: { direction: 'rtl', fontSize: '16px' },
+          }
+        );
+        // Play sound twice for urgency
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.volume = 1;
+          audio.play().catch(() => {});
+          setTimeout(() => {
+            const audio2 = new Audio('/notification.mp3');
+            audio2.volume = 1;
+            audio2.play().catch(() => {});
+          }, 1500);
+        } catch {}
+        visualNotifiedRef.current.add(endedKey);
+      }
+    }
+
+    // Cleanup ended sessions
+    const activeIds = new Set(sessions.map(s => s.id));
+    visualNotifiedRef.current.forEach(key => {
+      const sessionId = key.replace('visual-', '').split('-')[0];
+      if (!activeIds.has(sessionId)) {
+        visualNotifiedRef.current.delete(key);
+      }
+    });
+  }, []);
+
+  // Visual alerts check every 15 seconds
   useEffect(() => {
-    // Show a toast prompting to enable notifications if not granted
+    checkTimerVisualAlerts();
+    const interval = setInterval(checkTimerVisualAlerts, 15000);
+    return () => clearInterval(interval);
+  }, [checkTimerVisualAlerts]);
+
+  useEffect(() => {
     if (permission === 'default') {
       const timer = setTimeout(() => {
         toast.info(
