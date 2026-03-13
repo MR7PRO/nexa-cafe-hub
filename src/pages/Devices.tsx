@@ -253,10 +253,39 @@ export default function Devices() {
     sessionMode: 'meter' | 'timer';
     timerMinutes?: number;
     controllerCount: number;
+    customerBalanceId?: string;
+    deductMinutes?: number;
   }) => {
     if (!startSessionDevice) return;
 
     setStartSessionLoading(true);
+
+    // If using customer balance, deduct minutes first
+    if (options.customerBalanceId && options.deductMinutes) {
+      const { data: balance, error: balErr } = await supabase
+        .from('customer_balances')
+        .select('remaining_minutes')
+        .eq('id', options.customerBalanceId)
+        .single();
+
+      if (balErr || !balance) {
+        toast({ title: t('error'), description: 'تعذر قراءة رصيد الزبون', variant: 'destructive' });
+        setStartSessionLoading(false);
+        return;
+      }
+
+      const newRemaining = Math.max(0, balance.remaining_minutes - options.deductMinutes);
+      const { error: updateErr } = await supabase
+        .from('customer_balances')
+        .update({ remaining_minutes: newRemaining })
+        .eq('id', options.customerBalanceId);
+
+      if (updateErr) {
+        toast({ title: t('error'), description: 'تعذر خصم الرصيد', variant: 'destructive' });
+        setStartSessionLoading(false);
+        return;
+      }
+    }
 
     const { error } = await supabase.from('sessions').insert({
       device_id: startSessionDevice.id,
@@ -272,7 +301,8 @@ export default function Devices() {
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: t('sessionStarted'), description: startSessionDevice.name });
+      const balanceMsg = options.customerBalanceId ? ` (تم خصم ${options.deductMinutes} دقيقة من الرصيد)` : '';
+      toast({ title: t('sessionStarted'), description: startSessionDevice.name + balanceMsg });
       setStartSessionDialogOpen(false);
       setStartSessionDevice(null);
       fetchSessions();
