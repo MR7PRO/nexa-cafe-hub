@@ -493,7 +493,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="rate-plans" className="space-y-6" dir="rtl">
-        <TabsList className="grid w-full grid-cols-5 bg-card">
+        <TabsList className="grid w-full grid-cols-6 bg-card">
           <TabsTrigger value="rate-plans" className="gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">خطط التسعير</span>
@@ -512,7 +512,11 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">صلاحيات المستخدمين</span>
+            <span className="hidden sm:inline">الصلاحيات</span>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">المظهر</span>
           </TabsTrigger>
         </TabsList>
 
