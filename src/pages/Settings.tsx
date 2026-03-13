@@ -46,7 +46,11 @@ import {
   Monitor,
   Gamepad2,
   MapPin,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import type { Tables, Json } from '@/integrations/supabase/types';
 
 type RatePlan = Tables<'rate_plans'>;
@@ -75,6 +79,7 @@ interface UserWithRole {
 export default function Settings() {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { mode, setMode, resolvedTheme } = useTheme();
 
   // Rate Plans
   const [ratePlans, setRatePlans] = useState<RatePlan[]>([]);
@@ -488,7 +493,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="rate-plans" className="space-y-6" dir="rtl">
-        <TabsList className="grid w-full grid-cols-5 bg-card">
+        <TabsList className="grid w-full grid-cols-6 bg-card">
           <TabsTrigger value="rate-plans" className="gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">خطط التسعير</span>
@@ -507,7 +512,11 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">صلاحيات المستخدمين</span>
+            <span className="hidden sm:inline">الصلاحيات</span>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">المظهر</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1024,6 +1033,78 @@ export default function Settings() {
                   <li><strong>{t('manager')}:</strong> إدارة الأجهزة والمنتجات والاسترجاع</li>
                   <li><strong>{t('cashier')}:</strong> البيع وإدارة الجلسات فقط</li>
                 </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                المظهر والألوان
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Theme Mode */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">وضع المظهر</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setMode('dark')}
+                    className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      mode === 'dark' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Moon className={`h-8 w-8 ${mode === 'dark' ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className="font-medium">ليلي</span>
+                    <span className="text-xs text-muted-foreground">وضع داكن دائماً</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('light')}
+                    className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      mode === 'light' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Sun className={`h-8 w-8 ${mode === 'light' ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className="font-medium">نهاري</span>
+                    <span className="text-xs text-muted-foreground">وضع فاتح دائماً</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('auto')}
+                    className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      mode === 'auto' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex h-8 w-8 items-center">
+                      <Sun className="h-5 w-5 text-warning" />
+                      <Moon className="h-5 w-5 -mr-1 text-accent" />
+                    </div>
+                    <span className="font-medium">تلقائي</span>
+                    <span className="text-xs text-muted-foreground">6ص-6م نهاري</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Current Status */}
+              <div className="rounded-xl bg-muted/50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">الوضع الحالي</span>
+                  <span className="flex items-center gap-2 font-medium text-foreground">
+                    {resolvedTheme === 'dark' ? (
+                      <><Moon className="h-4 w-4" /> ليلي</>
+                    ) : (
+                      <><Sun className="h-4 w-4" /> نهاري</>
+                    )}
+                  </span>
+                </div>
+                {mode === 'auto' && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    يتبدل تلقائياً: نهاري من 6 صباحاً حتى 6 مساءً، ليلي باقي الوقت
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

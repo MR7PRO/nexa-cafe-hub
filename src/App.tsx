@@ -9,6 +9,7 @@ import { NotificationProvider } from "@/components/NotificationProvider";
 import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
 import { OfflineSyncProvider } from "@/contexts/OfflineSyncContext";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { ThemeProvider } from "@/hooks/useTheme";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Devices from "./pages/Devices";
@@ -83,18 +84,20 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <OfflineSyncProvider>
-        <Toaster />
-        <Sonner />
-        <OfflineIndicator />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
-      </OfflineSyncProvider>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <OfflineSyncProvider>
+          <Toaster />
+          <Sonner />
+          <OfflineIndicator />
+          <BrowserRouter>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </BrowserRouter>
+        </OfflineSyncProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
