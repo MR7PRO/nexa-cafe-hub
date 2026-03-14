@@ -9,7 +9,8 @@ import {
   ShoppingBag,
   DollarSign,
   Gamepad2,
-  Users
+  Users,
+  UserCheck
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
@@ -38,6 +39,8 @@ import {
   LineChart,
   Line,
   Legend,
+  AreaChart,
+  Area,
 } from 'recharts';
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -66,23 +69,29 @@ interface ProductStats {
   revenue: number;
 }
 
+interface EmployeeStats {
+  name: string;
+  sessionsStarted: number;
+  ticketsClosed: number;
+  totalRevenue: number;
+}
+
 const COLORS = ['hsl(187, 100%, 50%)', 'hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(270, 70%, 55%)', 'hsl(0, 72%, 55%)'];
 
 export default function Reports() {
   const [period, setPeriod] = useState<Period>('daily');
   const [loading, setLoading] = useState(true);
   
-  // Stats
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [sessionRevenue, setSessionRevenue] = useState(0);
   const [productRevenue, setProductRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
   
-  // Chart data
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
   const [topProducts, setTopProducts] = useState<ProductStats[]>([]);
+  const [employeeStats, setEmployeeStats] = useState<EmployeeStats[]>([]);
   
   const { toast } = useToast();
 
@@ -122,6 +131,7 @@ export default function Reports() {
       fetchDeviceStats(startDate),
       fetchHourlyStats(startDate),
       fetchTopProducts(startDate),
+      fetchEmployeeStats(startDate),
     ]);
     
     setLoading(false);
@@ -232,7 +242,6 @@ export default function Reports() {
 
       deviceMap[deviceName].sessions += 1;
 
-      // Calculate revenue
       if (session.end_time && session.start_time) {
         const startTime = new Date(session.start_time).getTime();
         const endTime = new Date(session.end_time).getTime();
@@ -299,8 +308,55 @@ export default function Reports() {
     setTopProducts(sorted.slice(0, 5));
   };
 
+  const fetchEmployeeStats = async (startDate: Date) => {
+    // Fetch profiles for name mapping
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name');
+
+    if (!profiles) return;
+
+    const profileMap = new Map(profiles.map(p => [p.id, p.name]));
+
+    // Fetch sessions created by employees
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('created_by')
+      .gte('created_at', startDate.toISOString());
+
+    // Fetch tickets closed by employees
+    const { data: tickets } = await supabase
+      .from('tickets')
+      .select('created_by, total_ils')
+      .eq('status', 'paid')
+      .gte('created_at', startDate.toISOString());
+
+    const empMap: Record<string, EmployeeStats> = {};
+
+    sessions?.forEach((s: any) => {
+      if (!s.created_by) return;
+      const name = profileMap.get(s.created_by) || 'غير معروف';
+      if (!empMap[s.created_by]) {
+        empMap[s.created_by] = { name, sessionsStarted: 0, ticketsClosed: 0, totalRevenue: 0 };
+      }
+      empMap[s.created_by].sessionsStarted += 1;
+    });
+
+    tickets?.forEach((t: any) => {
+      if (!t.created_by) return;
+      const name = profileMap.get(t.created_by) || 'غير معروف';
+      if (!empMap[t.created_by]) {
+        empMap[t.created_by] = { name, sessionsStarted: 0, ticketsClosed: 0, totalRevenue: 0 };
+      }
+      empMap[t.created_by].ticketsClosed += 1;
+      empMap[t.created_by].totalRevenue += Number(t.total_ils);
+    });
+
+    const sorted = Object.values(empMap).sort((a, b) => b.totalRevenue - a.totalRevenue);
+    setEmployeeStats(sorted);
+  };
+
   const exportCSV = () => {
-    // Prepare CSV data
     const headers = ['التاريخ', 'إيرادات الجلسات', 'إيرادات المنتجات', 'الإجمالي'];
     const rows = revenueData.map(row => [
       row.date,
@@ -314,7 +370,6 @@ export default function Reports() {
       ...rows.map(row => row.join(',')),
     ].join('\n');
 
-    // Add BOM for Arabic support
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -507,7 +562,13 @@ export default function Reports() {
           </div>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={hourlyData}>
+              <AreaChart data={hourlyData}>
+                <defs>
+                  <linearGradient id="peakGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(187, 100%, 50%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(187, 100%, 50%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="hour" 
@@ -527,15 +588,14 @@ export default function Reports() {
                   }}
                   formatter={(value: number) => [`${value} جلسة`, 'عدد الجلسات']}
                 />
-                <Line 
+                <Area 
                   type="monotone" 
                   dataKey="sessions" 
                   stroke="hsl(187, 100%, 50%)" 
                   strokeWidth={2}
-                  dot={{ fill: 'hsl(187, 100%, 50%)', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 6, fill: 'hsl(187, 100%, 50%)' }}
+                  fill="url(#peakGradient)"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-center text-sm text-muted-foreground">
@@ -549,6 +609,71 @@ export default function Reports() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Employee Performance */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">أداء الموظفين</h3>
+          <UserCheck className="h-5 w-5 text-primary" />
+        </div>
+        {employeeStats.length === 0 ? (
+          <div className="flex h-32 items-center justify-center text-muted-foreground">
+            لا توجد بيانات
+          </div>
+        ) : (
+          <>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={employeeStats} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  />
+                  <YAxis 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      direction: 'rtl',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ direction: 'rtl' }} />
+                  <Bar dataKey="sessionsStarted" name="جلسات بدأها" fill="hsl(187, 100%, 50%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="ticketsClosed" name="فواتير أغلقها" fill="hsl(270, 70%, 55%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="pb-2 text-right font-medium text-muted-foreground">الموظف</th>
+                    <th className="pb-2 text-center font-medium text-muted-foreground">جلسات بدأها</th>
+                    <th className="pb-2 text-center font-medium text-muted-foreground">فواتير أغلقها</th>
+                    <th className="pb-2 text-left font-medium text-muted-foreground">إجمالي الإيرادات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employeeStats.map((emp, idx) => (
+                    <tr key={idx} className="border-b border-border/50">
+                      <td className="py-2 font-medium text-foreground">{emp.name}</td>
+                      <td className="py-2 text-center text-muted-foreground">{emp.sessionsStarted}</td>
+                      <td className="py-2 text-center text-muted-foreground">{emp.ticketsClosed}</td>
+                      <td className="py-2 text-left font-mono font-bold text-primary">{formatILS(emp.totalRevenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Top Products */}

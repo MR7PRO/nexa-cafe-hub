@@ -11,15 +11,19 @@ import {
   Settings,
   LogOut,
   CalendarDays,
-  Heart
+  Heart,
+  Sparkles,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useLowStockProducts } from '@/hooks/useLowStockProducts';
 import logo from '@/assets/logo.png';
 
-const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; adminOnly?: boolean }> = [
+const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
   { href: '/devices', icon: Monitor, label: 'devices' },
   { href: '/pos', icon: ShoppingCart, label: 'pos' },
@@ -27,6 +31,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/products', icon: Package, label: 'products' },
   { href: '/reservations', icon: CalendarDays, label: 'reservations' },
   { href: '/loyalty', icon: Heart, label: 'loyalty' },
+  { href: '/promotions', icon: Sparkles, label: 'promotions', labelAr: 'العروض' },
   { href: '/shifts', icon: Clock, label: 'shifts' },
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
@@ -36,6 +41,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
 export function Sidebar() {
   const location = useLocation();
   const { profile, role, signOut } = useAuth();
+  const { lowStockCount } = useLowStockProducts();
 
   const roleLabel = role ? t(role) : '';
   const roleColor = role === 'admin' ? 'text-primary' : role === 'manager' ? 'text-accent' : 'text-muted-foreground';
@@ -57,6 +63,17 @@ export function Sidebar() {
           </div>
         </div>
 
+        {/* Low Stock Alert Banner */}
+        {lowStockCount > 0 && (
+          <Link
+            to="/products"
+            className="mx-3 mt-3 flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning transition-colors hover:bg-warning/20"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{lowStockCount} منتج بمخزون منخفض</span>
+          </Link>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => {
@@ -64,6 +81,7 @@ export function Sidebar() {
             
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
+            const showBadge = item.href === '/products' && lowStockCount > 0;
 
             return (
               <Link
@@ -78,7 +96,12 @@ export function Sidebar() {
                 style={isActive ? { boxShadow: '0 0 20px hsl(190 100% 50% / 0.15)' } : undefined}
               >
                 <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
-                <span>{t(item.label as any)}</span>
+                <span className="flex-1">{item.labelAr || t(item.label as any)}</span>
+                {showBadge && (
+                  <Badge variant="destructive" className="h-5 min-w-5 px-1 text-[10px]">
+                    {lowStockCount}
+                  </Badge>
+                )}
               </Link>
             );
           })}
