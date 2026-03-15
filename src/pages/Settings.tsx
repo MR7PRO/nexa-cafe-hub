@@ -130,7 +130,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'super_admin') {
       fetchData();
     }
   }, [role]);

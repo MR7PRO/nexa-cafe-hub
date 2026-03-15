@@ -474,7 +474,7 @@ export default function Devices() {
     return d.type === filter;
   });
 
-  const canManageDevices = role === 'admin' || role === 'manager';
+  const canManageDevices = role === 'admin' || role === 'manager' || role === 'super_admin';
 
   if (loading) {
     return (
