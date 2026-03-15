@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import logo from '@/assets/logo.webp';
+import logo from '@/assets/logo.png';
 
 const loginSchema = z.object({
   email: z.string().email('بريد إلكتروني غير صالح'),
@@ -108,7 +108,7 @@ export default function Auth() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-6 relative">
             <img 
-              src="/logo.webp"
+              src="/logo.png"
               alt="Nexa Cafe Logo" 
               width={112}
               height={112}
