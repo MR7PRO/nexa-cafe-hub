@@ -21,7 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
-import logo from '@/assets/logo.webp';
+import logo from '@/assets/logo.png';
 
 const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },

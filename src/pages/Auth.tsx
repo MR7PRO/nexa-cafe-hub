@@ -108,7 +108,7 @@ export default function Auth() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-6 relative">
             <img 
-              src="/logo.webp"
+              src="/logo.png"
               alt="Nexa Cafe Logo" 
               width={112}
               height={112}
