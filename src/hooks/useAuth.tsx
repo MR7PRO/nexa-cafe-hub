@@ -2,16 +2,18 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'manager' | 'cashier';
+type AppRole = 'admin' | 'manager' | 'cashier' | 'super_admin';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  isSuperAdmin: boolean;
+  tenantId: string | null;
   profile: { name: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
