@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,20 +11,21 @@ import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvide
 import { OfflineSyncProvider } from "@/contexts/OfflineSyncContext";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ThemeProvider } from "@/hooks/useTheme";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Devices from "./pages/Devices";
-import POS from "./pages/POS";
-import Products from "./pages/Products";
-import Tickets from "./pages/Tickets";
-import Reports from "./pages/Reports";
-import Shifts from "./pages/Shifts";
-import Expenses from "./pages/Expenses";
-import Settings from "./pages/Settings";
-import Reservations from "./pages/Reservations";
-import Loyalty from "./pages/Loyalty";
-import Promotions from "./pages/Promotions";
-import NotFound from "./pages/NotFound";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Devices = lazy(() => import("./pages/Devices"));
+const POS = lazy(() => import("./pages/POS"));
+const Products = lazy(() => import("./pages/Products"));
+const Tickets = lazy(() => import("./pages/Tickets"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Shifts = lazy(() => import("./pages/Shifts"));
+const Expenses = lazy(() => import("./pages/Expenses"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Reservations = lazy(() => import("./pages/Reservations"));
+const Loyalty = lazy(() => import("./pages/Loyalty"));
+const Promotions = lazy(() => import("./pages/Promotions"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -64,23 +66,31 @@ function AppRoutes() {
     );
   }
 
+  const fallback = (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+
   return (
-    <Routes>
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
-      <Route path="/pos" element={<ProtectedRoute><POS /></ProtectedRoute>} />
-      <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-      <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
-      <Route path="/loyalty" element={<ProtectedRoute><Loyalty /></ProtectedRoute>} />
-      <Route path="/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
-      <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-      <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
-      <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/devices" element={<ProtectedRoute><Devices /></ProtectedRoute>} />
+        <Route path="/pos" element={<ProtectedRoute><POS /></ProtectedRoute>} />
+        <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+        <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
+        <Route path="/loyalty" element={<ProtectedRoute><Loyalty /></ProtectedRoute>} />
+        <Route path="/promotions" element={<ProtectedRoute><Promotions /></ProtectedRoute>} />
+        <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
+        <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
 
