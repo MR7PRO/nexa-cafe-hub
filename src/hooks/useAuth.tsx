@@ -99,15 +99,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => {
     const redirectUrl = `${window.location.origin}/`;
+    
+    const metadata: Record<string, string> = { name };
+    if (options?.tenantId) metadata.tenant_id = options.tenantId;
+    if (options?.cafeName) metadata.cafe_name = options.cafeName;
     
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { name },
+        data: metadata,
       },
     });
     return { error: error as Error | null };
