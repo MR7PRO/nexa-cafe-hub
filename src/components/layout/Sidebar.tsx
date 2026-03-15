@@ -43,8 +43,8 @@ export function Sidebar() {
   const { profile, role, signOut } = useAuth();
   const { lowStockCount } = useLowStockProducts();
 
-  const roleLabel = role ? t(role) : '';
-  const roleColor = role === 'admin' ? 'text-primary' : role === 'manager' ? 'text-accent' : 'text-muted-foreground';
+  const roleLabel = role ? (role === 'super_admin' ? 'مدير النظام' : t(role as any)) : '';
+  const roleColor = role === 'admin' || role === 'super_admin' ? 'text-primary' : role === 'manager' ? 'text-accent' : 'text-muted-foreground';
 
   return (
     <aside className="fixed right-0 top-0 z-40 h-screen w-64 border-l border-border bg-sidebar/95 backdrop-blur-xl">

@@ -15,6 +15,7 @@ export const ar = {
   admin: 'مدير',
   manager: 'مشرف',
   cashier: 'كاشير',
+  super_admin: 'مدير النظام',
   
   // Navigation
   dashboard: 'لوحة التحكم',

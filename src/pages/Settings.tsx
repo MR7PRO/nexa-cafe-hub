@@ -130,7 +130,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'super_admin') {
       fetchData();
     }
   }, [role]);
@@ -463,7 +463,7 @@ export default function Settings() {
     }
   };
 
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'super_admin') {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Card className="max-w-md">

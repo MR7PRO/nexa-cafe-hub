@@ -67,7 +67,7 @@ export default function Products() {
   
   const { toast } = useToast();
   const { role } = useAuth();
-  const canManage = role === 'admin' || role === 'manager';
+  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
 
   useEffect(() => {
     fetchData();

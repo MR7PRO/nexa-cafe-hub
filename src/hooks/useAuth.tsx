@@ -2,16 +2,18 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'manager' | 'cashier';
+type AppRole = 'admin' | 'manager' | 'cashier' | 'super_admin';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  isSuperAdmin: boolean;
+  tenantId: string | null;
   profile: { name: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -21,8 +23,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ name: string } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isSuperAdmin = role === 'super_admin';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -38,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setRole(null);
+          setTenantId(null);
           setProfile(null);
         }
       }
@@ -69,15 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(roleData.role as AppRole);
       }
 
-      // Fetch profile
+      // Fetch profile with tenant_id
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, tenant_id')
         .eq('id', userId)
         .maybeSingle();
       
       if (profileData) {
         setProfile({ name: profileData.name });
+        setTenantId(profileData.tenant_id);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -92,15 +99,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => {
     const redirectUrl = `${window.location.origin}/`;
+    
+    const metadata: Record<string, string> = { name };
+    if (options?.tenantId) metadata.tenant_id = options.tenantId;
+    if (options?.cafeName) metadata.cafe_name = options.cafeName;
     
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { name },
+        data: metadata,
       },
     });
     return { error: error as Error | null };
@@ -111,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, isSuperAdmin, tenantId, profile, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
