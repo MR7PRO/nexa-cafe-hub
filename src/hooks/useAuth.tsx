@@ -75,15 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(roleData.role as AppRole);
       }
 
-      // Fetch profile
+      // Fetch profile with tenant_id
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, tenant_id')
         .eq('id', userId)
         .maybeSingle();
       
       if (profileData) {
         setProfile({ name: profileData.name });
+        setTenantId(profileData.tenant_id);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
