@@ -54,6 +54,8 @@ export function Sidebar() {
           <img 
             src={logo} 
             alt="Nexa Cafe" 
+            width={48}
+            height={48}
             className="w-12 h-12"
             style={{ filter: 'drop-shadow(0 0 10px hsl(190 100% 50% / 0.3))' }}
           />

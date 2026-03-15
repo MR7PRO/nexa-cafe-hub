@@ -110,6 +110,8 @@ export default function Auth() {
             <img 
               src={logo} 
               alt="Nexa Cafe Logo" 
+              width={112}
+              height={112}
               className="w-28 h-28 mx-auto logo-float drop-shadow-2xl"
               style={{ filter: 'drop-shadow(0 0 30px hsl(190 100% 50% / 0.4)) drop-shadow(0 0 60px hsl(270 80% 60% / 0.3))' }}
             />
