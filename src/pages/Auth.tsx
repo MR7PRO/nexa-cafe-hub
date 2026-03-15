@@ -108,10 +108,11 @@ export default function Auth() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-6 relative">
             <img 
-              src={logo} 
+              src="/logo.webp"
               alt="Nexa Cafe Logo" 
               width={112}
               height={112}
+              fetchPriority="high"
               className="w-28 h-28 mx-auto logo-float drop-shadow-2xl"
               style={{ filter: 'drop-shadow(0 0 30px hsl(190 100% 50% / 0.4)) drop-shadow(0 0 60px hsl(270 80% 60% / 0.3))' }}
             />
