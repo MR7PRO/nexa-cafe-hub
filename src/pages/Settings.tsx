@@ -463,7 +463,7 @@ export default function Settings() {
     }
   };
 
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'super_admin') {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Card className="max-w-md">
