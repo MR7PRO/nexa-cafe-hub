@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,20 +11,21 @@ import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvide
 import { OfflineSyncProvider } from "@/contexts/OfflineSyncContext";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ThemeProvider } from "@/hooks/useTheme";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Devices from "./pages/Devices";
-import POS from "./pages/POS";
-import Products from "./pages/Products";
-import Tickets from "./pages/Tickets";
-import Reports from "./pages/Reports";
-import Shifts from "./pages/Shifts";
-import Expenses from "./pages/Expenses";
-import Settings from "./pages/Settings";
-import Reservations from "./pages/Reservations";
-import Loyalty from "./pages/Loyalty";
-import Promotions from "./pages/Promotions";
-import NotFound from "./pages/NotFound";
+
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Devices = lazy(() => import("./pages/Devices"));
+const POS = lazy(() => import("./pages/POS"));
+const Products = lazy(() => import("./pages/Products"));
+const Tickets = lazy(() => import("./pages/Tickets"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Shifts = lazy(() => import("./pages/Shifts"));
+const Expenses = lazy(() => import("./pages/Expenses"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Reservations = lazy(() => import("./pages/Reservations"));
+const Loyalty = lazy(() => import("./pages/Loyalty"));
+const Promotions = lazy(() => import("./pages/Promotions"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
