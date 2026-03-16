@@ -89,6 +89,7 @@ function AppRoutes() {
         <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/super-admin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
