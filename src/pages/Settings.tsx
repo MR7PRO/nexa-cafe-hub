@@ -200,6 +200,56 @@ export default function Settings() {
     if (error) console.error('Error fetching devices:', error);
   };
 
+  const fetchInvitations = async () => {
+    const { data } = await supabase
+      .from('invitations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setInvitations(data);
+  };
+
+  const generateCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+  };
+
+  const handleCreateInvite = async () => {
+    setCreatingInvite(true);
+    const code = generateCode();
+    const expiresAt = inviteForm.expires_days
+      ? new Date(Date.now() + parseInt(inviteForm.expires_days) * 86400000).toISOString()
+      : null;
+
+    const { error } = await supabase.from('invitations').insert({
+      code,
+      role: inviteForm.role as any,
+      max_uses: parseInt(inviteForm.max_uses) || 10,
+      expires_at: expiresAt,
+    });
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'تم إنشاء كود الدعوة بنجاح' });
+      setShowInviteDialog(false);
+      fetchInvitations();
+    }
+    setCreatingInvite(false);
+  };
+
+  const handleDeactivateInvite = async (id: string) => {
+    await supabase.from('invitations').update({ is_active: false }).eq('id', id);
+    fetchInvitations();
+  };
+
+  const copyInviteLink = (code: string) => {
+    const url = `${window.location.origin}/auth?invite=${code}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'تم نسخ رابط الدعوة' });
+  };
+
   const fetchUsersWithRoles = async () => {
     setLoadingUsers(true);
     
