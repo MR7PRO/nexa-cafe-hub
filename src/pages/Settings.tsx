@@ -113,6 +113,12 @@ export default function Settings() {
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Invitations
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ role: 'cashier' as string, max_uses: '10', expires_days: '7' });
+  const [creatingInvite, setCreatingInvite] = useState(false);
+
   // Devices
   const [devices, setDevices] = useState<Device[]>([]);
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
