@@ -13,7 +13,8 @@ import {
   CalendarDays,
   Heart,
   Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -23,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
 import logo from '@/assets/logo.png';
 
-const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean }> = [
+const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean; superAdminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
   { href: '/devices', icon: Monitor, label: 'devices' },
   { href: '/pos', icon: ShoppingCart, label: 'pos' },
@@ -36,6 +37,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
   { href: '/settings', icon: Settings, label: 'settings', adminOnly: true },
+  { href: '/super-admin', icon: Shield, label: 'إدارة النظام', labelAr: 'إدارة النظام', superAdminOnly: true },
 ];
 
 export function Sidebar() {
@@ -79,7 +81,8 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => {
-            if (item.adminOnly && role !== 'admin') return null;
+            if (item.adminOnly && role !== 'admin' && role !== 'super_admin') return null;
+            if (item.superAdminOnly && role !== 'super_admin') return null;
             
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
