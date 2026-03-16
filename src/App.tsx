@@ -25,6 +25,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Reservations = lazy(() => import("./pages/Reservations"));
 const Loyalty = lazy(() => import("./pages/Loyalty"));
 const Promotions = lazy(() => import("./pages/Promotions"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
