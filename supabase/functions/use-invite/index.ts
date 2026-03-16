@@ -23,29 +23,17 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Increment used_count
-    const { error } = await adminClient.rpc("increment_invite_usage" as any, { _invitation_id: invitation_id });
-    
-    // Fallback if RPC doesn't exist
-    if (error) {
+    const { data: invite } = await adminClient
+      .from("invitations")
+      .select("used_count")
+      .eq("id", invitation_id)
+      .single();
+
+    if (invite) {
       await adminClient
         .from("invitations")
-        .update({ used_count: adminClient.rpc("" as any) } as any)
+        .update({ used_count: (invite.used_count || 0) + 1 })
         .eq("id", invitation_id);
-      
-      // Simple increment via raw update
-      const { data: invite } = await adminClient
-        .from("invitations")
-        .select("used_count")
-        .eq("id", invitation_id)
-        .single();
-      
-      if (invite) {
-        await adminClient
-          .from("invitations")
-          .update({ used_count: (invite.used_count || 0) + 1 })
-          .eq("id", invitation_id);
-      }
     }
 
     return new Response(JSON.stringify({ success: true }), {
