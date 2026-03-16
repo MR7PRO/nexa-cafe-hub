@@ -1104,6 +1104,156 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
+        {/* Invitations Tab */}
+        <TabsContent value="invitations">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Ticket className="h-5 w-5 text-primary" />
+                دعوات الموظفين
+              </CardTitle>
+              <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-1">
+                    <Plus className="h-4 w-4" />
+                    كود دعوة جديد
+                  </Button>
+                </DialogTrigger>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>إنشاء كود دعوة</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>صلاحية الموظف</Label>
+                      <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cashier">كاشير</SelectItem>
+                          <SelectItem value="manager">مشرف</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>الحد الأقصى للاستخدام</Label>
+                      <Input
+                        type="number"
+                        value={inviteForm.max_uses}
+                        onChange={(e) => setInviteForm({ ...inviteForm, max_uses: e.target.value })}
+                        min="1"
+                        max="100"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>صالح لمدة (أيام)</Label>
+                      <Input
+                        type="number"
+                        value={inviteForm.expires_days}
+                        onChange={(e) => setInviteForm({ ...inviteForm, expires_days: e.target.value })}
+                        min="1"
+                        max="365"
+                      />
+                    </div>
+                    <Button onClick={handleCreateInvite} disabled={creatingInvite} className="w-full gap-2">
+                      <Plus className="h-4 w-4" />
+                      {creatingInvite ? 'جاري الإنشاء...' : 'إنشاء الكود'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {invitations.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">لم يتم إنشاء أي دعوات بعد</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">الكود</TableHead>
+                      <TableHead className="text-right">الصلاحية</TableHead>
+                      <TableHead className="text-right">الاستخدام</TableHead>
+                      <TableHead className="text-right">الصلاحية</TableHead>
+                      <TableHead className="text-right">الحالة</TableHead>
+                      <TableHead className="text-right">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invitations.map((inv: any) => {
+                      const expired = inv.expires_at && new Date(inv.expires_at) < new Date();
+                      const exhausted = inv.max_uses && inv.used_count >= inv.max_uses;
+                      const active = inv.is_active && !expired && !exhausted;
+                      return (
+                        <TableRow key={inv.id}>
+                          <TableCell>
+                            <code className="rounded bg-muted px-2 py-1 font-mono text-sm tracking-widest">{inv.code}</code>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{inv.role === 'cashier' ? 'كاشير' : 'مشرف'}</Badge>
+                          </TableCell>
+                          <TableCell>{inv.used_count}/{inv.max_uses || '∞'}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {inv.expires_at ? new Date(inv.expires_at).toLocaleDateString('ar-EG') : 'بدون حد'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={active ? 'default' : 'outline'}>
+                              {active ? 'نشط' : expired ? 'منتهي' : exhausted ? 'مكتمل' : 'معطل'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                onClick={() => copyInviteLink(inv.code)}
+                                title="نسخ رابط الدعوة"
+                              >
+                                <Link className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(inv.code);
+                                  toast({ title: 'تم نسخ الكود' });
+                                }}
+                                title="نسخ الكود"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              {active && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeactivateInvite(inv.id)}
+                                  title="تعطيل"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+              <div className="mt-4 rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                <p className="font-medium">كيفية دعوة موظف:</p>
+                <ol className="mt-2 list-inside list-decimal space-y-1">
+                  <li>أنشئ كود دعوة جديد</li>
+                  <li>انسخ رابط الدعوة أو الكود وأرسله للموظف</li>
+                  <li>يدخل الموظف الرابط ويسجل حساب جديد</li>
+                  <li>يتم ربطه تلقائياً بمقهاك بالصلاحية المحددة</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Appearance Tab */}
         <TabsContent value="appearance">
           <Card>
