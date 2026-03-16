@@ -266,6 +266,53 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string
+          used_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tenant_id: string
+          used_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string
+          used_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_packages: {
         Row: {
           bonus_hours: number
