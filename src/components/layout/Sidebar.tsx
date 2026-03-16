@@ -81,7 +81,8 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => {
-            if (item.adminOnly && role !== 'admin') return null;
+            if (item.adminOnly && role !== 'admin' && role !== 'super_admin') return null;
+            if (item.superAdminOnly && role !== 'super_admin') return null;
             
             const isActive = location.pathname === item.href;
             const Icon = item.icon;
