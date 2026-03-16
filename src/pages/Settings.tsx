@@ -49,6 +49,9 @@ import {
   Sun,
   Moon,
   Palette,
+  Ticket,
+  Copy,
+  Link,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import type { Tables, Json } from '@/integrations/supabase/types';
