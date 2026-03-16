@@ -222,12 +222,14 @@ export default function Settings() {
       ? new Date(Date.now() + parseInt(inviteForm.expires_days) * 86400000).toISOString()
       : null;
 
-    const { error } = await supabase.from('invitations').insert({
+    const insertData: any = {
       code,
-      role: inviteForm.role as any,
+      role: inviteForm.role,
       max_uses: parseInt(inviteForm.max_uses) || 10,
       expires_at: expiresAt,
-    });
+    };
+
+    const { error } = await supabase.from('invitations').insert(insertData);
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
