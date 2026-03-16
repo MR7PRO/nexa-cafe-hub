@@ -503,10 +503,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="rate-plans" className="space-y-6" dir="rtl">
-        <TabsList className="grid w-full grid-cols-6 bg-card">
+        <TabsList className="grid w-full grid-cols-7 bg-card">
           <TabsTrigger value="rate-plans" className="gap-2">
             <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">خطط التسعير</span>
+            <span className="hidden sm:inline">التسعير</span>
           </TabsTrigger>
           <TabsTrigger value="devices" className="gap-2">
             <Monitor className="h-4 w-4" />
@@ -514,15 +514,19 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger value="discount" className="gap-2">
             <Percent className="h-4 w-4" />
-            <span className="hidden sm:inline">حدود الخصم</span>
+            <span className="hidden sm:inline">الخصم</span>
           </TabsTrigger>
           <TabsTrigger value="receipt" className="gap-2">
             <Receipt className="h-4 w-4" />
-            <span className="hidden sm:inline">قالب الإيصال</span>
+            <span className="hidden sm:inline">الإيصال</span>
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">الصلاحيات</span>
+          </TabsTrigger>
+          <TabsTrigger value="invitations" className="gap-2">
+            <Ticket className="h-4 w-4" />
+            <span className="hidden sm:inline">الدعوات</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="gap-2">
             <Palette className="h-4 w-4" />
