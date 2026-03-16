@@ -151,6 +151,7 @@ export default function Settings() {
       fetchSettings(),
       fetchUsersWithRoles(),
       fetchDevices(),
+      fetchInvitations(),
     ]);
     setLoading(false);
   };
