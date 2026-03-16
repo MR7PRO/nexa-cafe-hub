@@ -13,7 +13,8 @@ import {
   CalendarDays,
   Heart,
   Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
