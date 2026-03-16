@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
 import logo from '@/assets/logo.png';
 
-const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean }> = [
+const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean; superAdminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
   { href: '/devices', icon: Monitor, label: 'devices' },
   { href: '/pos', icon: ShoppingCart, label: 'pos' },
