@@ -234,6 +234,8 @@ export default function Settings() {
       role: inviteForm.role,
       max_uses: parseInt(inviteForm.max_uses) || 10,
       expires_at: expiresAt,
+      tenant_id: tenantId,
+      created_by: user?.id,
     };
 
     const { error } = await supabase.from('invitations').insert(insertData);
