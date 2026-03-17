@@ -1390,6 +1390,53 @@ export default function Settings() {
         onConfirm={() => deviceToDeactivate && handleToggleDevice(deviceToDeactivate)}
         variant="destructive"
       />
+
+      {/* Send Invite Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={(open) => {
+        setEmailDialogOpen(open);
+        if (!open) {
+          setEmailTarget('');
+          setSelectedInviteForEmail(null);
+        }
+      }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              إرسال الدعوة عبر البريد الإلكتروني
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedInviteForEmail && (
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <p>كود الدعوة: <code className="rounded bg-muted px-2 py-0.5 font-mono tracking-widest">{selectedInviteForEmail.code}</code></p>
+                <p className="mt-1">الصلاحية: <Badge variant="secondary">{selectedInviteForEmail.role === 'manager' ? 'مشرف' : 'كاشير'}</Badge></p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>البريد الإلكتروني للموظف</Label>
+              <Input
+                type="email"
+                placeholder="employee@example.com"
+                value={emailTarget}
+                onChange={(e) => setEmailTarget(e.target.value)}
+                dir="ltr"
+              />
+            </div>
+            <Button
+              onClick={handleSendInviteEmail}
+              disabled={sendingEmail || !emailTarget}
+              className="w-full gap-2"
+            >
+              {sendingEmail ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> جاري التحضير...</>
+              ) : (
+                <><Send className="h-4 w-4" /> إرسال الدعوة</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
