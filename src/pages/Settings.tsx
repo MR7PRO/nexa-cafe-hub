@@ -1239,7 +1239,7 @@ export default function Settings() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
+                             <div className="flex items-center gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1262,15 +1262,29 @@ export default function Settings() {
                                 <Copy className="h-4 w-4" />
                               </Button>
                               {active && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeactivateInvite(inv.id)}
-                                  title="تعطيل"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      setSelectedInviteForEmail(inv);
+                                      setEmailDialogOpen(true);
+                                    }}
+                                    title="إرسال عبر البريد"
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleDeactivateInvite(inv.id)}
+                                    title="تعطيل"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </TableCell>
@@ -1284,7 +1298,7 @@ export default function Settings() {
                 <p className="font-medium">كيفية دعوة موظف:</p>
                 <ol className="mt-2 list-inside list-decimal space-y-1">
                   <li>أنشئ كود دعوة جديد</li>
-                  <li>انسخ رابط الدعوة أو الكود وأرسله للموظف</li>
+                  <li>انسخ رابط الدعوة أو أرسله عبر البريد الإلكتروني</li>
                   <li>يدخل الموظف الرابط ويسجل حساب جديد</li>
                   <li>يتم ربطه تلقائياً بمقهاك بالصلاحية المحددة</li>
                 </ol>
