@@ -52,6 +52,9 @@ import {
   Ticket,
   Copy,
   Link,
+  Mail,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import type { Tables, Json } from '@/integrations/supabase/types';
@@ -118,6 +121,10 @@ export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteForm, setInviteForm] = useState({ role: 'cashier' as string, max_uses: '10', expires_days: '7' });
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTarget, setEmailTarget] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedInviteForEmail, setSelectedInviteForEmail] = useState<any>(null);
 
   // Devices
   const [devices, setDevices] = useState<Device[]>([]);
@@ -250,6 +257,38 @@ export default function Settings() {
     const url = `${window.location.origin}/auth?invite=${code}`;
     navigator.clipboard.writeText(url);
     toast({ title: 'تم نسخ رابط الدعوة' });
+  };
+
+  const handleSendInviteEmail = async () => {
+    if (!emailTarget || !selectedInviteForEmail) return;
+    setSendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          email: emailTarget,
+          code: selectedInviteForEmail.code,
+          role: selectedInviteForEmail.role,
+        },
+      });
+
+      if (error) throw error;
+
+      // Open mailto with generated content
+      const subject = encodeURIComponent(data.subject || `دعوة للانضمام لفريق العمل`);
+      const inviteLink = `${window.location.origin}/auth?invite=${selectedInviteForEmail.code}`;
+      const body = encodeURIComponent(
+        `مرحباً،\n\nتمت دعوتك للانضمام لفريق العمل كـ ${selectedInviteForEmail.role === 'manager' ? 'مشرف' : 'كاشير'}.\n\nكود الدعوة: ${selectedInviteForEmail.code}\n\nرابط التسجيل: ${inviteLink}\n\nشكراً لك!`
+      );
+      window.open(`mailto:${emailTarget}?subject=${subject}&body=${body}`, '_blank');
+
+      toast({ title: 'تم فتح برنامج البريد الإلكتروني' });
+      setEmailDialogOpen(false);
+      setEmailTarget('');
+      setSelectedInviteForEmail(null);
+    } catch (error: any) {
+      toast({ title: 'خطأ', description: error.message || 'فشل إرسال البريد', variant: 'destructive' });
+    }
+    setSendingEmail(false);
   };
 
   const fetchUsersWithRoles = async () => {
@@ -1200,7 +1239,7 @@ export default function Settings() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
+                             <div className="flex items-center gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1223,15 +1262,29 @@ export default function Settings() {
                                 <Copy className="h-4 w-4" />
                               </Button>
                               {active && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeactivateInvite(inv.id)}
-                                  title="تعطيل"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      setSelectedInviteForEmail(inv);
+                                      setEmailDialogOpen(true);
+                                    }}
+                                    title="إرسال عبر البريد"
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleDeactivateInvite(inv.id)}
+                                    title="تعطيل"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </TableCell>
@@ -1245,7 +1298,7 @@ export default function Settings() {
                 <p className="font-medium">كيفية دعوة موظف:</p>
                 <ol className="mt-2 list-inside list-decimal space-y-1">
                   <li>أنشئ كود دعوة جديد</li>
-                  <li>انسخ رابط الدعوة أو الكود وأرسله للموظف</li>
+                  <li>انسخ رابط الدعوة أو أرسله عبر البريد الإلكتروني</li>
                   <li>يدخل الموظف الرابط ويسجل حساب جديد</li>
                   <li>يتم ربطه تلقائياً بمقهاك بالصلاحية المحددة</li>
                 </ol>
@@ -1337,6 +1390,53 @@ export default function Settings() {
         onConfirm={() => deviceToDeactivate && handleToggleDevice(deviceToDeactivate)}
         variant="destructive"
       />
+
+      {/* Send Invite Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={(open) => {
+        setEmailDialogOpen(open);
+        if (!open) {
+          setEmailTarget('');
+          setSelectedInviteForEmail(null);
+        }
+      }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              إرسال الدعوة عبر البريد الإلكتروني
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedInviteForEmail && (
+              <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                <p>كود الدعوة: <code className="rounded bg-muted px-2 py-0.5 font-mono tracking-widest">{selectedInviteForEmail.code}</code></p>
+                <p className="mt-1">الصلاحية: <Badge variant="secondary">{selectedInviteForEmail.role === 'manager' ? 'مشرف' : 'كاشير'}</Badge></p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>البريد الإلكتروني للموظف</Label>
+              <Input
+                type="email"
+                placeholder="employee@example.com"
+                value={emailTarget}
+                onChange={(e) => setEmailTarget(e.target.value)}
+                dir="ltr"
+              />
+            </div>
+            <Button
+              onClick={handleSendInviteEmail}
+              disabled={sendingEmail || !emailTarget}
+              className="w-full gap-2"
+            >
+              {sendingEmail ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> جاري التحضير...</>
+              ) : (
+                <><Send className="h-4 w-4" /> إرسال الدعوة</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
