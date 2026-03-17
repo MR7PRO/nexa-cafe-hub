@@ -121,6 +121,10 @@ export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteForm, setInviteForm] = useState({ role: 'cashier' as string, max_uses: '10', expires_days: '7' });
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTarget, setEmailTarget] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedInviteForEmail, setSelectedInviteForEmail] = useState<any>(null);
 
   // Devices
   const [devices, setDevices] = useState<Device[]>([]);
