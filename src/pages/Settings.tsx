@@ -83,7 +83,7 @@ interface UserWithRole {
 }
 
 export default function Settings() {
-  const { user, role } = useAuth();
+  const { user, role, tenantId } = useAuth();
   const { toast } = useToast();
   const { mode, setMode, resolvedTheme } = useTheme();
 
