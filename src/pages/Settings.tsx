@@ -83,7 +83,7 @@ interface UserWithRole {
 }
 
 export default function Settings() {
-  const { user, role } = useAuth();
+  const { user, role, tenantId } = useAuth();
   const { toast } = useToast();
   const { mode, setMode, resolvedTheme } = useTheme();
 
@@ -234,6 +234,8 @@ export default function Settings() {
       role: inviteForm.role,
       max_uses: parseInt(inviteForm.max_uses) || 10,
       expires_at: expiresAt,
+      tenant_id: tenantId,
+      created_by: user?.id,
     };
 
     const { error } = await supabase.from('invitations').insert(insertData);
