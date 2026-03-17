@@ -52,6 +52,9 @@ import {
   Ticket,
   Copy,
   Link,
+  Mail,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import type { Tables, Json } from '@/integrations/supabase/types';
