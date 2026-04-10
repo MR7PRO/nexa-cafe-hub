@@ -363,31 +363,37 @@ export default function Reports() {
     setEmployeeStats(sorted);
   };
 
-  const exportCSV = () => {
-    const headers = ['التاريخ', 'إيرادات الجلسات', 'إيرادات المنتجات', 'الإجمالي'];
-    const rows = revenueData.map(row => [
-      row.date,
-      row.sessions.toFixed(2),
-      row.products.toFixed(2),
-      row.total.toFixed(2),
-    ]);
+  const fetchExpenses = async (startDate: Date) => {
+    const { data } = await supabase
+      .from('expenses')
+      .select('amount_ils')
+      .gte('created_at', startDate.toISOString());
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(',')),
-    ].join('\n');
+    if (data) {
+      setTotalExpenses(data.reduce((sum, e) => sum + Number(e.amount_ils), 0));
+    }
+  };
 
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `nexa-cafe-report-${period}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير بنجاح' });
+  const getExportData = () => ({
+    revenueData,
+    totalRevenue,
+    sessionRevenue,
+    productRevenue,
+    totalTickets,
+    employeeStats,
+    topProducts: topProducts.map(p => ({ name: p.name, quantity: p.quantity, revenue: p.revenue })),
+    expenses: [],
+    periodLabel: periodLabels[period],
+  });
+
+  const handleExportPDF = () => {
+    exportReportPDF(getExportData());
+    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير كـ PDF' });
+  };
+
+  const handleExportExcel = () => {
+    exportReportExcel(getExportData());
+    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير كـ Excel' });
   };
 
   const periodLabels = {
