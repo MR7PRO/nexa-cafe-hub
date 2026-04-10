@@ -10,8 +10,13 @@ import {
   DollarSign,
   Gamepad2,
   Users,
-  UserCheck
+  UserCheck,
+  FileText,
+  FileSpreadsheet,
+  TrendingDown,
+  MinusCircle,
 } from 'lucide-react';
+import { exportReportPDF, exportReportExcel } from '@/lib/reportExport';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -86,6 +91,7 @@ export default function Reports() {
   const [sessionRevenue, setSessionRevenue] = useState(0);
   const [productRevenue, setProductRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
@@ -132,6 +138,7 @@ export default function Reports() {
       fetchHourlyStats(startDate),
       fetchTopProducts(startDate),
       fetchEmployeeStats(startDate),
+      fetchExpenses(startDate),
     ]);
     
     setLoading(false);
@@ -356,31 +363,37 @@ export default function Reports() {
     setEmployeeStats(sorted);
   };
 
-  const exportCSV = () => {
-    const headers = ['التاريخ', 'إيرادات الجلسات', 'إيرادات المنتجات', 'الإجمالي'];
-    const rows = revenueData.map(row => [
-      row.date,
-      row.sessions.toFixed(2),
-      row.products.toFixed(2),
-      row.total.toFixed(2),
-    ]);
+  const fetchExpenses = async (startDate: Date) => {
+    const { data } = await supabase
+      .from('expenses')
+      .select('amount_ils')
+      .gte('created_at', startDate.toISOString());
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(',')),
-    ].join('\n');
+    if (data) {
+      setTotalExpenses(data.reduce((sum, e) => sum + Number(e.amount_ils), 0));
+    }
+  };
 
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `nexa-cafe-report-${period}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير بنجاح' });
+  const getExportData = () => ({
+    revenueData,
+    totalRevenue,
+    sessionRevenue,
+    productRevenue,
+    totalTickets,
+    employeeStats,
+    topProducts: topProducts.map(p => ({ name: p.name, quantity: p.quantity, revenue: p.revenue })),
+    expenses: [],
+    periodLabel: periodLabels[period],
+  });
+
+  const handleExportPDF = () => {
+    exportReportPDF(getExportData());
+    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير كـ PDF' });
+  };
+
+  const handleExportExcel = () => {
+    exportReportExcel(getExportData());
+    toast({ title: 'تم التصدير', description: 'تم تصدير التقرير كـ Excel' });
   };
 
   const periodLabels = {
@@ -417,10 +430,44 @@ export default function Reports() {
               <SelectItem value="monthly">آخر 6 أشهر</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={exportCSV} variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            تصدير CSV
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+            <FileText className="h-4 w-4" />
+            PDF
           </Button>
+          <Button onClick={handleExportExcel} variant="outline" className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Profit & Loss Summary */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">ملخص الأرباح والخسائر</h3>
+          <TrendingDown className="h-5 w-5 text-primary" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
+            <p className="mt-1 text-2xl font-bold text-success ils-amount">{formatILS(totalRevenue)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
+            <p className="mt-1 text-2xl font-bold text-destructive ils-amount">{formatILS(totalExpenses)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">صافي الربح</p>
+            <p className={cn('mt-1 text-2xl font-bold ils-amount', totalRevenue - totalExpenses >= 0 ? 'text-success' : 'text-destructive')}>
+              {formatILS(totalRevenue - totalExpenses)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">هامش الربح</p>
+            <p className={cn('mt-1 text-2xl font-bold', totalRevenue > 0 ? 'text-primary' : 'text-muted-foreground')}>
+              {totalRevenue > 0 ? `${(((totalRevenue - totalExpenses) / totalRevenue) * 100).toFixed(1)}%` : '0%'}
+            </p>
+          </div>
         </div>
       </div>
 
