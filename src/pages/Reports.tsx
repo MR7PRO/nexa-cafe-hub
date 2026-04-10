@@ -10,8 +10,13 @@ import {
   DollarSign,
   Gamepad2,
   Users,
-  UserCheck
+  UserCheck,
+  FileText,
+  FileSpreadsheet,
+  TrendingDown,
+  MinusCircle,
 } from 'lucide-react';
+import { exportReportPDF, exportReportExcel } from '@/lib/reportExport';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
