@@ -91,6 +91,7 @@ export default function Reports() {
   const [sessionRevenue, setSessionRevenue] = useState(0);
   const [productRevenue, setProductRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
