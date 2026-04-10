@@ -138,6 +138,7 @@ export default function Reports() {
       fetchHourlyStats(startDate),
       fetchTopProducts(startDate),
       fetchEmployeeStats(startDate),
+      fetchExpenses(startDate),
     ]);
     
     setLoading(false);
