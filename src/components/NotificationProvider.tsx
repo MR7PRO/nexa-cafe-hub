@@ -11,19 +11,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   });
 
   const visualNotifiedRef = useRef<Set<string>>(new Set());
+  const knownEmployeesRef = useRef<Set<string>>(new Set());
+  const initialLoadDoneRef = useRef(false);
 
   // Visual on-screen alerts for timer sessions
   const checkTimerVisualAlerts = useCallback(async () => {
     const { data: sessions } = await supabase
       .from('sessions')
       .select(`
-        id,
-        start_time,
-        paused_seconds,
-        pause_started_at,
-        status,
-        session_mode,
-        timer_minutes,
+        id, start_time, paused_seconds, pause_started_at, status, session_mode, timer_minutes,
         devices!inner(name)
       `)
       .eq('status', 'running')
@@ -49,68 +45,88 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       const deviceName = (session.devices as { name: string })?.name || 'جهاز';
 
-      // 5-minute warning visual toast
+      // 5-minute warning
       const fiveMinKey = `visual-${session.id}-5min`;
       if (remainingMinutes <= 5 && remainingMinutes > 0 && !visualNotifiedRef.current.has(fiveMinKey)) {
-        toast.warning(
-          `⏱️ جلسة "${deviceName}" ستنتهي خلال ${remainingMinutes} دقائق!`,
-          {
-            duration: 15000,
-            position: 'top-center',
-            style: { direction: 'rtl', fontSize: '16px' },
-          }
-        );
-        // Play sound
-        try {
-          const audio = new Audio('/notification.mp3');
-          audio.volume = 0.7;
-          audio.play().catch(() => {});
-        } catch {}
+        toast.warning(`⏱️ جلسة "${deviceName}" ستنتهي خلال ${remainingMinutes} دقائق!`, {
+          duration: 15000, position: 'top-center',
+          style: { direction: 'rtl', fontSize: '16px' },
+        });
+        playSound(0.7);
         visualNotifiedRef.current.add(fiveMinKey);
       }
 
-      // Timer ended visual toast
+      // Timer ended
       const endedKey = `visual-${session.id}-ended`;
       if (remainingMs <= 0 && !visualNotifiedRef.current.has(endedKey)) {
-        toast.error(
-          `🔔 انتهت جلسة "${deviceName}"! يرجى إنهاء الجلسة.`,
-          {
-            duration: 30000,
-            position: 'top-center',
-            style: { direction: 'rtl', fontSize: '16px' },
-          }
-        );
-        // Play sound twice for urgency
-        try {
-          const audio = new Audio('/notification.mp3');
-          audio.volume = 1;
-          audio.play().catch(() => {});
-          setTimeout(() => {
-            const audio2 = new Audio('/notification.mp3');
-            audio2.volume = 1;
-            audio2.play().catch(() => {});
-          }, 1500);
-        } catch {}
+        toast.error(`🔔 انتهت جلسة "${deviceName}"! يرجى إنهاء الجلسة.`, {
+          duration: 30000, position: 'top-center',
+          style: { direction: 'rtl', fontSize: '16px' },
+        });
+        playSound(1);
+        setTimeout(() => playSound(1), 1500);
         visualNotifiedRef.current.add(endedKey);
       }
     }
 
-    // Cleanup ended sessions
+    // Cleanup
     const activeIds = new Set(sessions.map(s => s.id));
     visualNotifiedRef.current.forEach(key => {
       const sessionId = key.replace('visual-', '').split('-')[0];
-      if (!activeIds.has(sessionId)) {
-        visualNotifiedRef.current.delete(key);
-      }
+      if (!activeIds.has(sessionId)) visualNotifiedRef.current.delete(key);
     });
   }, []);
 
-  // Visual alerts check every 15 seconds
+  // Monitor new employee joins
+  const checkNewEmployees = useCallback(async () => {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name');
+
+    if (!profiles) return;
+
+    if (!initialLoadDoneRef.current) {
+      profiles.forEach(p => knownEmployeesRef.current.add(p.id));
+      initialLoadDoneRef.current = true;
+      return;
+    }
+
+    for (const profile of profiles) {
+      if (!knownEmployeesRef.current.has(profile.id)) {
+        toast.success(
+          `👤 انضم موظف جديد: "${profile.name}"`,
+          {
+            duration: 10000, position: 'top-center',
+            style: { direction: 'rtl', fontSize: '16px' },
+          }
+        );
+        playSound(0.5);
+        knownEmployeesRef.current.add(profile.id);
+      }
+    }
+  }, []);
+
+  function playSound(volume: number) {
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = volume;
+      audio.play().catch(() => {});
+    } catch {}
+  }
+
+  // Timer alerts every 15s
   useEffect(() => {
     checkTimerVisualAlerts();
     const interval = setInterval(checkTimerVisualAlerts, 15000);
     return () => clearInterval(interval);
   }, [checkTimerVisualAlerts]);
+
+  // New employee check every 60s
+  useEffect(() => {
+    checkNewEmployees();
+    const interval = setInterval(checkNewEmployees, 60000);
+    return () => clearInterval(interval);
+  }, [checkNewEmployees]);
 
   useEffect(() => {
     if (permission === 'default') {
@@ -122,10 +138,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
               فعّل الإشعارات لتلقي تنبيهات المخزون والجلسات
             </p>
             <button
-              onClick={() => {
-                requestPermission();
-                toast.dismiss();
-              }}
+              onClick={() => { requestPermission(); toast.dismiss(); }}
               className="mt-2 text-sm text-primary hover:underline"
             >
               تفعيل الآن
@@ -134,7 +147,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           { duration: 10000 }
         );
       }, 3000);
-      
       return () => clearTimeout(timer);
     }
   }, [permission, requestPermission]);
