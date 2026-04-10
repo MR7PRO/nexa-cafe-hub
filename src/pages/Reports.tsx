@@ -438,6 +438,43 @@ export default function Reports() {
             <FileSpreadsheet className="h-4 w-4" />
             Excel
           </Button>
+        </div>
+      </div>
+
+      {/* Profit & Loss Summary */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">ملخص الأرباح والخسائر</h3>
+          <TrendingDown className="h-5 w-5 text-primary" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
+            <p className="mt-1 text-2xl font-bold text-success ils-amount">{formatILS(totalRevenue)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
+            <p className="mt-1 text-2xl font-bold text-destructive ils-amount">{formatILS(totalExpenses)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">صافي الربح</p>
+            <p className={cn('mt-1 text-2xl font-bold ils-amount', totalRevenue - totalExpenses >= 0 ? 'text-success' : 'text-destructive')}>
+              {formatILS(totalRevenue - totalExpenses)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">هامش الربح</p>
+            <p className={cn('mt-1 text-2xl font-bold', totalRevenue > 0 ? 'text-primary' : 'text-muted-foreground')}>
+              {totalRevenue > 0 ? `${(((totalRevenue - totalExpenses) / totalRevenue) * 100).toFixed(1)}%` : '0%'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="إجمالي الإيرادات"
           value={formatILS(totalRevenue)}
           icon={<DollarSign className="h-6 w-6" />}
           variant="primary"
