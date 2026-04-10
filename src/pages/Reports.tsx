@@ -430,17 +430,14 @@ export default function Reports() {
               <SelectItem value="monthly">آخر 6 أشهر</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={exportCSV} variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            تصدير CSV
+          <Button onClick={handleExportPDF} variant="outline" className="gap-2">
+            <FileText className="h-4 w-4" />
+            PDF
           </Button>
-        </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="إجمالي الإيرادات"
+          <Button onClick={handleExportExcel} variant="outline" className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </Button>
           value={formatILS(totalRevenue)}
           icon={<DollarSign className="h-6 w-6" />}
           variant="primary"
