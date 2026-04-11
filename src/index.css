@@ -431,3 +431,24 @@
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
+
+/* Safe area for mobile bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .stat-card-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  * {
+    -webkit-touch-callout: none;
+  }
+}
