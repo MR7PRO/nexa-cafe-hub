@@ -10,7 +10,7 @@ interface AuthContextType {
   role: AppRole | null;
   isSuperAdmin: boolean;
   tenantId: string | null;
-  profile: { name: string } | null;
+  profile: { name: string; avatar_url: string | null } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => Promise<{ error: Error | null }>;
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<{ name: string } | null>(null);
+  const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isSuperAdmin = role === 'super_admin';
@@ -78,12 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch profile with tenant_id
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('name, tenant_id')
+        .select('name, tenant_id, avatar_url')
         .eq('id', userId)
         .maybeSingle();
       
       if (profileData) {
-        setProfile({ name: profileData.name });
+        setProfile({ name: profileData.name, avatar_url: profileData.avatar_url || null });
         setTenantId(profileData.tenant_id);
       }
     } catch (error) {
