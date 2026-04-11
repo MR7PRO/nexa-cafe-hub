@@ -18,19 +18,23 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "notification.mp3", "robots.txt"],
+      devOptions: {
+        enabled: false,
+      },
+      includeAssets: ["favicon.ico", "favicon.png", "notification.mp3", "robots.txt", "logo-192.png", "logo-512.png"],
       manifest: {
-        name: "نظام إدارة صالة الألعاب",
-        short_name: "صالة الألعاب",
-        description: "نظام متكامل لإدارة صالة الألعاب - يعمل بدون إنترنت",
+        name: "NexaCafe - نظام إدارة المقهى",
+        short_name: "NexaCafe",
+        description: "نظام متكامل لإدارة المقاهي ومراكز الألعاب - يعمل بدون إنترنت",
         theme_color: "#1a1a2e",
-        background_color: "#0f0f1a",
+        background_color: "#0a0a1a",
         display: "standalone",
-        orientation: "portrait",
+        orientation: "any",
         scope: "/",
         start_url: "/",
         dir: "rtl",
         lang: "ar",
+        categories: ["business", "productivity"],
         icons: [
           {
             src: "/favicon.ico",
@@ -41,27 +45,72 @@ export default defineConfig(({ mode }) => ({
             src: "/logo-192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any maskable",
           },
           {
             src: "/logo-512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any maskable",
           },
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,mp3}"],
+        navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api-cache",
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24,
               },
               networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/.*supabase\.co\/storage\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
               cacheableResponse: {
                 statuses: [0, 200],
               },
