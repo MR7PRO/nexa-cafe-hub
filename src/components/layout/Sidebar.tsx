@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { 
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
   LayoutDashboard, 
   Monitor, 
   ShoppingCart, 
@@ -21,6 +21,7 @@ import { t } from '@/lib/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
 import logo from '@/assets/logo.png';
 
@@ -42,6 +43,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { profile, role, signOut } = useAuth();
   const { lowStockCount } = useLowStockProducts();
 
@@ -114,20 +116,28 @@ export function Sidebar() {
 
         {/* User Info */}
         <div className="border-t border-border/50 p-3">
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-gradient-to-l from-card to-card/50 p-3 border border-border/30">
-            <div 
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-primary-foreground"
-              style={{ background: 'linear-gradient(135deg, hsl(190 100% 50%), hsl(270 80% 60%))' }}
-            >
-              {profile?.name?.charAt(0) || '?'}
-            </div>
+          <button
+            onClick={() => navigate('/profile')}
+            className="mb-3 flex w-full items-center gap-3 rounded-xl bg-gradient-to-l from-card to-card/50 p-3 border border-border/30 transition-colors hover:border-primary/30 cursor-pointer text-right"
+          >
+            <Avatar className="h-10 w-10 border-2 border-primary/20">
+              {profile?.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} alt={profile?.name || ''} />
+              ) : null}
+              <AvatarFallback
+                className="text-sm font-bold text-primary-foreground"
+                style={{ background: 'linear-gradient(135deg, hsl(190 100% 50%), hsl(270 80% 60%))' }}
+              >
+                {profile?.name?.charAt(0) || '?'}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-bold text-foreground">
                 {profile?.name || 'مستخدم'}
               </p>
               <p className={cn('text-xs font-medium', roleColor)}>{roleLabel}</p>
             </div>
-          </div>
+          </button>
           <Button
             variant="ghost"
             size="sm"
