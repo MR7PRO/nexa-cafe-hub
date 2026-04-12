@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Monitor, Gamepad2 } from 'lucide-react';
+import { Plus, Monitor, Gamepad2, Tv } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { StartSessionDialog } from '@/components/devices/StartSessionDialog';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
 import { ExtendTimerDialog } from '@/components/devices/ExtendTimerDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { TVModeView } from '@/components/devices/TVModeView';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -95,6 +96,7 @@ export default function Devices() {
   });
   // Selected device for keyboard shortcuts
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [tvMode, setTvMode] = useState(false);
   
   const { toast } = useToast();
   const { user, role } = useAuth();
@@ -486,6 +488,15 @@ export default function Devices() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* TV Mode */}
+      {tvMode && (
+        <TVModeView
+          devices={filteredDevices}
+          sessions={sessions}
+          onExit={() => setTvMode(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -495,7 +506,11 @@ export default function Devices() {
           </p>
         </div>
         <div className="flex gap-3">
-          {/* Filter */}
+          {/* TV Mode */}
+          <Button variant="outline" className="gap-2" onClick={() => setTvMode(true)}>
+            <Tv className="h-4 w-4" />
+            وضع العرض
+          </Button>
           <div className="flex gap-2 rounded-lg border border-border bg-card p-1">
             <button
               onClick={() => setFilter('all')}
