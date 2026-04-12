@@ -96,6 +96,7 @@ export default function Devices() {
   });
   // Selected device for keyboard shortcuts
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [tvMode, setTvMode] = useState(false);
   
   const { toast } = useToast();
   const { user, role } = useAuth();
