@@ -506,7 +506,11 @@ export default function Devices() {
           </p>
         </div>
         <div className="flex gap-3">
-          {/* Filter */}
+          {/* TV Mode */}
+          <Button variant="outline" className="gap-2" onClick={() => setTvMode(true)}>
+            <Tv className="h-4 w-4" />
+            وضع العرض
+          </Button>
           <div className="flex gap-2 rounded-lg border border-border bg-card p-1">
             <button
               onClick={() => setFilter('all')}
