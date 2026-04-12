@@ -344,6 +344,28 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Devices Grid */}
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">{t('deviceGrid')}</h2>
+          <Link to="/devices" className="text-sm text-primary hover:underline">عرض الكل</Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {devices.slice(0, 8).map((device) => (
+            <DeviceCard
+              key={device.id}
+              device={device}
+              session={sessions[device.id] || null}
+              onStart={() => handleStartSession(device.id)}
+              onPause={() => handlePauseSession(device.id)}
+              onResume={() => handleResumeSession(device.id)}
+              onEnd={() => handleEndSession(device.id)}
+              onTransfer={() => {}}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Weekly Revenue Chart */}
@@ -410,28 +432,6 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Devices Grid */}
-      <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">{t('deviceGrid')}</h2>
-          <Link to="/devices" className="text-sm text-primary hover:underline">عرض الكل</Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {devices.slice(0, 8).map((device) => (
-            <DeviceCard
-              key={device.id}
-              device={device}
-              session={sessions[device.id] || null}
-              onStart={() => handleStartSession(device.id)}
-              onPause={() => handlePauseSession(device.id)}
-              onResume={() => handleResumeSession(device.id)}
-              onEnd={() => handleEndSession(device.id)}
-              onTransfer={() => {}}
-            />
-          ))}
         </div>
       </div>
     </div>
