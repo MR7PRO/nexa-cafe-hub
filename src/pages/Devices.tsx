@@ -8,6 +8,7 @@ import { StartSessionDialog } from '@/components/devices/StartSessionDialog';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
 import { ExtendTimerDialog } from '@/components/devices/ExtendTimerDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { TVModeView } from '@/components/devices/TVModeView';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
