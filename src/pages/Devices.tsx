@@ -488,6 +488,15 @@ export default function Devices() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* TV Mode */}
+      {tvMode && (
+        <TVModeView
+          devices={filteredDevices}
+          sessions={sessions}
+          onExit={() => setTvMode(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
