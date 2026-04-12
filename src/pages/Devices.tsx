@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Monitor, Gamepad2 } from 'lucide-react';
+import { Plus, Monitor, Gamepad2, Tv } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
