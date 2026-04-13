@@ -19,6 +19,11 @@ if (isPreviewHost || isInIframe) {
   navigator.serviceWorker?.getRegistrations().then((registrations) => {
     registrations.forEach((r) => r.unregister());
   });
+} else {
+  // Register SW asynchronously to avoid render-blocking
+  import("virtual:pwa-register").then(({ registerSW }) => {
+    registerSW({ immediate: true });
+  }).catch(() => {});
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
