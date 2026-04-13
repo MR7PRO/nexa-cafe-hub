@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo.webp';
 
 const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean; superAdminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
