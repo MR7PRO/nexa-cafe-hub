@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
-import { DollarSign, Monitor, Receipt, AlertTriangle, Plus, ShoppingCart, TrendingUp, ShoppingBag, Clock } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { DollarSign, Monitor, Receipt, AlertTriangle, Plus, ShoppingCart, TrendingUp, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { DeviceCard } from '@/components/devices/DeviceCard';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import {
-  BarChart,
-  Bar,
+  useDevicesQuery,
+  useActiveSessionsQuery,
+  useRatePlansQuery,
+  useSessionRealtime,
+} from '@/hooks/useSessions';
+import { useSessionWorkflow } from '@/hooks/useSessionWorkflow';
+import {
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,32 +23,6 @@ import {
   Area,
   Legend,
 } from 'recharts';
-
-interface Device {
-  id: string;
-  name: string;
-  type: 'playstation' | 'pc';
-  location: string | null;
-}
-
-interface Session {
-  id: string;
-  device_id: string;
-  start_time: string;
-  paused_seconds: number;
-  pause_started_at: string | null;
-  status: 'running' | 'paused' | 'ended';
-  rate_plan: {
-    name: string;
-    price_per_hour_ils: number;
-  };
-}
-
-interface RatePlan {
-  id: string;
-  name: string;
-  price_per_hour_ils: number;
-}
 
 interface TopProduct {
   name: string;
@@ -61,93 +38,38 @@ interface WeeklyRevenue {
 }
 
 export default function Dashboard() {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [sessions, setSessions] = useState<Record<string, Session>>({});
-  const [ratePlans, setRatePlans] = useState<RatePlan[]>([]);
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [yesterdayRevenue, setYesterdayRevenue] = useState(0);
-  const [activeSessionCount, setActiveSessionCount] = useState(0);
   const [openTicketCount, setOpenTicketCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [weeklyRevenue, setWeeklyRevenue] = useState<WeeklyRevenue[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const [statsLoading, setStatsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-    
-    const channel = supabase
-      .channel('dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
-        fetchSessions();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, () => {
-        fetchDevices();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        fetchStats();
-        fetchWeeklyRevenue();
-      })
-      .subscribe();
+  // Shared session data layer (same source of truth as /devices)
+  const { data: devices = [], isLoading: devicesLoading } = useDevicesQuery();
+  const { data: sessions = {}, isLoading: sessionsLoading } = useActiveSessionsQuery();
+  const { data: ratePlans = [] } = useRatePlansQuery();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+  const workflow = useSessionWorkflow({ devices, sessions, ratePlans });
+
+  const activeSessionCount = Object.keys(sessions).length;
+  const loading = statsLoading || devicesLoading || sessionsLoading;
+
+  const refreshTicketData = useCallback(() => {
+    fetchStats();
+    fetchWeeklyRevenue();
   }, []);
 
-  const fetchData = async () => {
-    await Promise.all([
-      fetchDevices(),
-      fetchSessions(),
-      fetchRatePlans(),
-      fetchStats(),
-      fetchTopProducts(),
-      fetchWeeklyRevenue(),
-    ]);
-    setLoading(false);
-  };
+  // Realtime: sessions/devices invalidate the shared queries, tickets refresh stats only
+  useSessionRealtime({ onTickets: refreshTicketData });
 
-  const fetchDevices = async () => {
-    const { data, error } = await supabase
-      .from('devices')
-      .select('id, name, type, location')
-      .eq('is_active', true)
-      .order('name');
-    
-    if (data) setDevices(data as Device[]);
-    if (error) console.error('Error fetching devices:', error);
-  };
+  useEffect(() => {
+    Promise.all([fetchStats(), fetchTopProducts(), fetchWeeklyRevenue()]).finally(() =>
+      setStatsLoading(false)
+    );
+  }, []);
 
-  const fetchSessions = async () => {
-    const { data, error } = await supabase
-      .from('sessions')
-      .select(`
-        id, device_id, start_time, paused_seconds, pause_started_at, status,
-        rate_plans!inner(name, price_per_hour_ils)
-      `)
-      .in('status', ['running', 'paused']);
-    
-    if (data) {
-      const sessionMap: Record<string, Session> = {};
-      data.forEach((s: any) => {
-        sessionMap[s.device_id] = { ...s, rate_plan: s.rate_plans };
-      });
-      setSessions(sessionMap);
-      setActiveSessionCount(data.length);
-    }
-    if (error) console.error('Error fetching sessions:', error);
-  };
-
-  const fetchRatePlans = async () => {
-    const { data } = await supabase
-      .from('rate_plans')
-      .select('id, name, price_per_hour_ils')
-      .eq('is_active', true);
-    if (data) setRatePlans(data);
-  };
 
   const fetchStats = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -237,53 +159,8 @@ export default function Dashboard() {
     ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
     : 0;
 
-  const handleStartSession = async (deviceId: string) => {
-    const device = devices.find(d => d.id === deviceId);
-    if (!device) return;
-    const { data: deviceData } = await supabase
-      .from('devices').select('default_rate_plan_id').eq('id', deviceId).single();
-    const ratePlanId = deviceData?.default_rate_plan_id || ratePlans[0]?.id;
-    if (!ratePlanId) {
-      toast({ title: t('error'), description: 'لا توجد خطة تسعير', variant: 'destructive' });
-      return;
-    }
-    const { error } = await supabase.rpc('start_session', {
-      p_device_id: deviceId,
-      p_rate_plan_id: ratePlanId,
-      p_session_mode: 'meter',
-      p_controller_count: 1,
-    });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionStarted'), description: device.name }); }
-    fetchSessions();
-  };
 
-  const handlePauseSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('pause_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionPaused') }); }
-    fetchSessions();
-  };
 
-  const handleResumeSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('resume_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionResumed') }); }
-    fetchSessions();
-  };
-
-  const handleEndSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('end_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionEnded') }); }
-    fetchSessions();
-  };
 
 
   if (loading) {
@@ -353,12 +230,14 @@ export default function Dashboard() {
               key={device.id}
               device={device}
               session={sessions[device.id] || null}
-              onStart={() => handleStartSession(device.id)}
-              onPause={() => handlePauseSession(device.id)}
-              onResume={() => handleResumeSession(device.id)}
-              onEnd={() => handleEndSession(device.id)}
-              onTransfer={() => {}}
+              onStart={() => workflow.openStart(device.id)}
+              onPause={() => workflow.pause(device.id)}
+              onResume={() => workflow.resume(device.id)}
+              onEnd={() => workflow.openEnd(device.id)}
+              onTransfer={() => workflow.openTransfer(device.id)}
+              onExtendTimer={() => workflow.openExtendTimer(device.id)}
             />
+
           ))}
         </div>
       </div>
@@ -431,6 +310,10 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Shared session dialogs (start / end / transfer / extend) */}
+      {workflow.dialogs}
     </div>
+
   );
 }
