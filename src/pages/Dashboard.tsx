@@ -159,53 +159,8 @@ export default function Dashboard() {
     ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
     : 0;
 
-  const handleStartSession = async (deviceId: string) => {
-    const device = devices.find(d => d.id === deviceId);
-    if (!device) return;
-    const { data: deviceData } = await supabase
-      .from('devices').select('default_rate_plan_id').eq('id', deviceId).single();
-    const ratePlanId = deviceData?.default_rate_plan_id || ratePlans[0]?.id;
-    if (!ratePlanId) {
-      toast({ title: t('error'), description: 'لا توجد خطة تسعير', variant: 'destructive' });
-      return;
-    }
-    const { error } = await supabase.rpc('start_session', {
-      p_device_id: deviceId,
-      p_rate_plan_id: ratePlanId,
-      p_session_mode: 'meter',
-      p_controller_count: 1,
-    });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionStarted'), description: device.name }); }
-    fetchSessions();
-  };
 
-  const handlePauseSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('pause_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionPaused') }); }
-    fetchSessions();
-  };
 
-  const handleResumeSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('resume_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionResumed') }); }
-    fetchSessions();
-  };
-
-  const handleEndSession = async (deviceId: string) => {
-    const session = sessions[deviceId];
-    if (!session) return;
-    const { error } = await supabase.rpc('end_session', { p_session_id: session.id });
-    if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionEnded') }); }
-    fetchSessions();
-  };
 
 
   if (loading) {
