@@ -262,40 +262,14 @@ export default function Devices() {
 
     setStartSessionLoading(true);
 
-    // If using customer balance, deduct minutes first
-    if (options.customerBalanceId && options.deductMinutes) {
-      const { data: balance, error: balErr } = await supabase
-        .from('customer_balances')
-        .select('remaining_minutes')
-        .eq('id', options.customerBalanceId)
-        .single();
-
-      if (balErr || !balance) {
-        toast({ title: t('error'), description: 'تعذر قراءة رصيد الزبون', variant: 'destructive' });
-        setStartSessionLoading(false);
-        return;
-      }
-
-      const newRemaining = Math.max(0, balance.remaining_minutes - options.deductMinutes);
-      const { error: updateErr } = await supabase
-        .from('customer_balances')
-        .update({ remaining_minutes: newRemaining })
-        .eq('id', options.customerBalanceId);
-
-      if (updateErr) {
-        toast({ title: t('error'), description: 'تعذر خصم الرصيد', variant: 'destructive' });
-        setStartSessionLoading(false);
-        return;
-      }
-    }
-
-    const { error } = await supabase.from('sessions').insert({
-      device_id: startSessionDevice.id,
-      rate_plan_id: options.ratePlanId,
-      created_by: user?.id,
-      session_mode: options.sessionMode,
-      timer_minutes: options.timerMinutes || null,
-      controller_count: options.controllerCount,
+    const { error } = await supabase.rpc('start_session', {
+      p_device_id: startSessionDevice.id,
+      p_rate_plan_id: options.ratePlanId,
+      p_session_mode: options.sessionMode,
+      p_timer_minutes: options.timerMinutes ?? null,
+      p_controller_count: options.controllerCount,
+      p_customer_balance_id: options.customerBalanceId ?? null,
+      p_deduct_minutes: options.deductMinutes ?? null,
     });
 
     setStartSessionLoading(false);
@@ -310,6 +284,96 @@ export default function Devices() {
       fetchSessions();
     }
   };
+
+  const handlePauseSession = async (deviceId: string) => {
+    const session = sessions[deviceId];
+    if (!session) return;
+
+    const { error } = await supabase.rpc('pause_session', { p_session_id: session.id });
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
+    } else {
+      toast({ title: t('sessionPaused') });
+      fetchSessions();
+    }
+  };
+
+  const handleResumeSession = async (deviceId: string) => {
+    const session = sessions[deviceId];
+    if (!session) return;
+
+    const { error } = await supabase.rpc('resume_session', { p_session_id: session.id });
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
+    } else {
+      toast({ title: t('sessionResumed') });
+      fetchSessions();
+    }
+  };
+
+  const handleEndSessionClick = (deviceId: string) => {
+    setEndSessionDeviceId(deviceId);
+    setEndSessionDialogOpen(true);
+  };
+
+  const handleConfirmEndSession = async () => {
+    if (!endSessionDeviceId) return;
+    
+    const session = sessions[endSessionDeviceId];
+    if (!session) return;
+
+    setEndSessionLoading(true);
+
+    const { error } = await supabase.rpc('end_session', { p_session_id: session.id });
+
+    setEndSessionLoading(false);
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
+    } else {
+      toast({ title: t('sessionEnded') });
+      setEndSessionDialogOpen(false);
+      setEndSessionDeviceId(null);
+      fetchSessions();
+    }
+  };
+
+  const handleOpenTransfer = (deviceId: string) => {
+    setTransferSourceDeviceId(deviceId);
+    setTransferDialogOpen(true);
+  };
+
+  const handleTransferSession = async (targetDeviceId: string) => {
+    if (!transferSourceDeviceId) return;
+    
+    const session = sessions[transferSourceDeviceId];
+    if (!session) return;
+
+    setTransferLoading(true);
+
+    const { error } = await supabase.rpc('transfer_session', {
+      p_session_id: session.id,
+      p_target_device_id: targetDeviceId,
+    });
+
+    setTransferLoading(false);
+
+    if (error) {
+      toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
+    } else {
+      toast({ title: t('sessionTransferred') });
+      setTransferDialogOpen(false);
+      setTransferSourceDeviceId(null);
+      fetchSessions();
+    }
+  };
+
 
   const handlePauseSession = async (deviceId: string) => {
     const session = sessions[deviceId];
