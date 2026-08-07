@@ -262,40 +262,14 @@ export default function Devices() {
 
     setStartSessionLoading(true);
 
-    // If using customer balance, deduct minutes first
-    if (options.customerBalanceId && options.deductMinutes) {
-      const { data: balance, error: balErr } = await supabase
-        .from('customer_balances')
-        .select('remaining_minutes')
-        .eq('id', options.customerBalanceId)
-        .single();
-
-      if (balErr || !balance) {
-        toast({ title: t('error'), description: 'تعذر قراءة رصيد الزبون', variant: 'destructive' });
-        setStartSessionLoading(false);
-        return;
-      }
-
-      const newRemaining = Math.max(0, balance.remaining_minutes - options.deductMinutes);
-      const { error: updateErr } = await supabase
-        .from('customer_balances')
-        .update({ remaining_minutes: newRemaining })
-        .eq('id', options.customerBalanceId);
-
-      if (updateErr) {
-        toast({ title: t('error'), description: 'تعذر خصم الرصيد', variant: 'destructive' });
-        setStartSessionLoading(false);
-        return;
-      }
-    }
-
-    const { error } = await supabase.from('sessions').insert({
-      device_id: startSessionDevice.id,
-      rate_plan_id: options.ratePlanId,
-      created_by: user?.id,
-      session_mode: options.sessionMode,
-      timer_minutes: options.timerMinutes || null,
-      controller_count: options.controllerCount,
+    const { error } = await supabase.rpc('start_session', {
+      p_device_id: startSessionDevice.id,
+      p_rate_plan_id: options.ratePlanId,
+      p_session_mode: options.sessionMode,
+      p_timer_minutes: options.timerMinutes ?? null,
+      p_controller_count: options.controllerCount,
+      p_customer_balance_id: options.customerBalanceId ?? null,
+      p_deduct_minutes: options.deductMinutes ?? null,
     });
 
     setStartSessionLoading(false);
@@ -315,16 +289,11 @@ export default function Devices() {
     const session = sessions[deviceId];
     if (!session) return;
 
-    const { error } = await supabase
-      .from('sessions')
-      .update({ 
-        status: 'paused',
-        pause_started_at: new Date().toISOString(),
-      })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('pause_session', { p_session_id: session.id });
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
     } else {
       toast({ title: t('sessionPaused') });
       fetchSessions();
@@ -333,22 +302,13 @@ export default function Devices() {
 
   const handleResumeSession = async (deviceId: string) => {
     const session = sessions[deviceId];
-    if (!session || !session.pause_started_at) return;
+    if (!session) return;
 
-    const pauseStart = new Date(session.pause_started_at).getTime();
-    const additionalPaused = Math.floor((Date.now() - pauseStart) / 1000);
-
-    const { error } = await supabase
-      .from('sessions')
-      .update({ 
-        status: 'running',
-        pause_started_at: null,
-        paused_seconds: session.paused_seconds + additionalPaused,
-      })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('resume_session', { p_session_id: session.id });
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
     } else {
       toast({ title: t('sessionResumed') });
       fetchSessions();
@@ -368,26 +328,13 @@ export default function Devices() {
 
     setEndSessionLoading(true);
 
-    let totalPaused = session.paused_seconds;
-    if (session.status === 'paused' && session.pause_started_at) {
-      const pauseStart = new Date(session.pause_started_at).getTime();
-      totalPaused += Math.floor((Date.now() - pauseStart) / 1000);
-    }
-
-    const { error } = await supabase
-      .from('sessions')
-      .update({ 
-        status: 'ended',
-        end_time: new Date().toISOString(),
-        paused_seconds: totalPaused,
-        pause_started_at: null,
-      })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('end_session', { p_session_id: session.id });
 
     setEndSessionLoading(false);
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
     } else {
       toast({ title: t('sessionEnded') });
       setEndSessionDialogOpen(false);
@@ -409,15 +356,16 @@ export default function Devices() {
 
     setTransferLoading(true);
 
-    const { error } = await supabase
-      .from('sessions')
-      .update({ device_id: targetDeviceId })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('transfer_session', {
+      p_session_id: session.id,
+      p_target_device_id: targetDeviceId,
+    });
 
     setTransferLoading(false);
 
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
+      fetchSessions();
     } else {
       toast({ title: t('sessionTransferred') });
       setTransferDialogOpen(false);

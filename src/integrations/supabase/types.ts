@@ -942,6 +942,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      end_session: { Args: { p_session_id: string }; Returns: undefined }
       get_profile_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -956,6 +957,24 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      pause_session: { Args: { p_session_id: string }; Returns: undefined }
+      resume_session: { Args: { p_session_id: string }; Returns: undefined }
+      start_session: {
+        Args: {
+          p_controller_count?: number
+          p_customer_balance_id?: string
+          p_deduct_minutes?: number
+          p_device_id: string
+          p_rate_plan_id: string
+          p_session_mode?: string
+          p_timer_minutes?: number
+        }
+        Returns: string
+      }
+      transfer_session: {
+        Args: { p_session_id: string; p_target_device_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "super_admin"

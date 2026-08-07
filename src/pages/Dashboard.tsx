@@ -247,47 +247,44 @@ export default function Dashboard() {
       toast({ title: t('error'), description: 'لا توجد خطة تسعير', variant: 'destructive' });
       return;
     }
-    const { error } = await supabase.from('sessions').insert({
-      device_id: deviceId, rate_plan_id: ratePlanId, created_by: user?.id,
+    const { error } = await supabase.rpc('start_session', {
+      p_device_id: deviceId,
+      p_rate_plan_id: ratePlanId,
+      p_session_mode: 'meter',
+      p_controller_count: 1,
     });
     if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionStarted'), description: device.name }); fetchSessions(); }
+    else { toast({ title: t('sessionStarted'), description: device.name }); }
+    fetchSessions();
   };
 
   const handlePauseSession = async (deviceId: string) => {
     const session = sessions[deviceId];
     if (!session) return;
-    const { error } = await supabase.from('sessions')
-      .update({ status: 'paused', pause_started_at: new Date().toISOString() })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('pause_session', { p_session_id: session.id });
     if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionPaused') }); fetchSessions(); }
+    else { toast({ title: t('sessionPaused') }); }
+    fetchSessions();
   };
 
   const handleResumeSession = async (deviceId: string) => {
     const session = sessions[deviceId];
-    if (!session || !session.pause_started_at) return;
-    const additionalPaused = Math.floor((Date.now() - new Date(session.pause_started_at).getTime()) / 1000);
-    const { error } = await supabase.from('sessions')
-      .update({ status: 'running', pause_started_at: null, paused_seconds: session.paused_seconds + additionalPaused })
-      .eq('id', session.id);
+    if (!session) return;
+    const { error } = await supabase.rpc('resume_session', { p_session_id: session.id });
     if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionResumed') }); fetchSessions(); }
+    else { toast({ title: t('sessionResumed') }); }
+    fetchSessions();
   };
 
   const handleEndSession = async (deviceId: string) => {
     const session = sessions[deviceId];
     if (!session) return;
-    let totalPaused = session.paused_seconds;
-    if (session.status === 'paused' && session.pause_started_at) {
-      totalPaused += Math.floor((Date.now() - new Date(session.pause_started_at).getTime()) / 1000);
-    }
-    const { error } = await supabase.from('sessions')
-      .update({ status: 'ended', end_time: new Date().toISOString(), paused_seconds: totalPaused, pause_started_at: null })
-      .eq('id', session.id);
+    const { error } = await supabase.rpc('end_session', { p_session_id: session.id });
     if (error) toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    else { toast({ title: t('sessionEnded') }); fetchSessions(); }
+    else { toast({ title: t('sessionEnded') }); }
+    fetchSessions();
   };
+
 
   if (loading) {
     return (
