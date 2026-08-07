@@ -230,12 +230,14 @@ export default function Dashboard() {
               key={device.id}
               device={device}
               session={sessions[device.id] || null}
-              onStart={() => handleStartSession(device.id)}
-              onPause={() => handlePauseSession(device.id)}
-              onResume={() => handleResumeSession(device.id)}
-              onEnd={() => handleEndSession(device.id)}
-              onTransfer={() => {}}
+              onStart={() => workflow.openStart(device.id)}
+              onPause={() => workflow.pause(device.id)}
+              onResume={() => workflow.resume(device.id)}
+              onEnd={() => workflow.openEnd(device.id)}
+              onTransfer={() => workflow.openTransfer(device.id)}
+              onExtendTimer={() => workflow.openExtendTimer(device.id)}
             />
+
           ))}
         </div>
       </div>
