@@ -310,6 +310,10 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Shared session dialogs (start / end / transfer / extend) */}
+      {workflow.dialogs}
     </div>
+
   );
 }
