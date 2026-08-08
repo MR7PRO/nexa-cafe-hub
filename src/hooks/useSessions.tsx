@@ -232,8 +232,9 @@ export function useSessionMutations() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: t('sessionEnded') });
+      toast({ title: t('sessionEnded'), description: 'الجلسة بانتظار التحصيل' });
       invalidateSessions();
+      queryClient.invalidateQueries({ queryKey: ['pending-settlements'] });
     },
     onError: fail,
   });
