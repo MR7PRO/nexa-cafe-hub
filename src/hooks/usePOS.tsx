@@ -213,7 +213,7 @@ export function usePOS() {
     mutationFn: async (payments: PaymentPart[]) => {
       const { data, error } = await supabase.rpc('process_sale', {
         p_items: cart.map((item) => ({ product_id: item.id, qty: item.qty })),
-        p_payments: payments,
+        p_payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
         p_promotion_id: promotionId,
         p_manual_discount_ils: 0,
       });
