@@ -41,6 +41,7 @@ export default function Devices() {
   const [filter, setFilter] = useState<'all' | 'playstation' | 'pc'>('all');
   const [tvMode, setTvMode] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [settleSessionId, setSettleSessionId] = useState<string | null>(null);
 
   // New device form
   const [newDevice, setNewDevice] = useState({
