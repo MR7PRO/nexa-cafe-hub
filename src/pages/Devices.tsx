@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Plus, Monitor, Gamepad2, Tv } from 'lucide-react';
+import { Plus, Monitor, Gamepad2, Tv, Wallet } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
@@ -17,6 +17,8 @@ import {
   sessionKeys,
 } from '@/hooks/useSessions';
 import { useSessionWorkflow } from '@/hooks/useSessionWorkflow';
+import { usePendingSettlementsQuery } from '@/hooks/useSessionSettlement';
+import { SettleSessionDialog } from '@/components/devices/SettleSessionDialog';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +41,7 @@ export default function Devices() {
   const [filter, setFilter] = useState<'all' | 'playstation' | 'pc'>('all');
   const [tvMode, setTvMode] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [settleSessionId, setSettleSessionId] = useState<string | null>(null);
 
   // New device form
   const [newDevice, setNewDevice] = useState({
@@ -55,6 +58,7 @@ export default function Devices() {
   const { data: devices = [], isLoading: devicesLoading } = useDevicesQuery();
   const { data: sessions = {}, isLoading: sessionsLoading } = useActiveSessionsQuery();
   const { data: ratePlans = [], isLoading: plansLoading } = useRatePlansQuery();
+  const { data: pendingSettlements = [] } = usePendingSettlementsQuery();
 
   useSessionRealtime();
 
@@ -295,8 +299,44 @@ export default function Devices() {
         </div>
       )}
 
+      {/* Ended sessions awaiting payment collection */}
+      {pendingSettlements.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">جلسات بانتظار التحصيل</h2>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-sm text-primary">
+              {pendingSettlements.length}
+            </span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {pendingSettlements.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-xl bg-muted/50 p-3"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{s.device?.name || 'جهاز'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.end_time ? new Date(s.end_time).toLocaleString('ar') : ''}
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => setSettleSessionId(s.id)}>
+                  تحصيل
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Shared session dialogs (start / end / transfer / extend) */}
       {workflow.dialogs}
+
+      <SettleSessionDialog
+        sessionId={settleSessionId}
+        onOpenChange={(open) => !open && setSettleSessionId(null)}
+      />
     </div>
   );
 }
