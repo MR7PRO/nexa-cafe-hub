@@ -58,6 +58,7 @@ export default function Devices() {
   const { data: devices = [], isLoading: devicesLoading } = useDevicesQuery();
   const { data: sessions = {}, isLoading: sessionsLoading } = useActiveSessionsQuery();
   const { data: ratePlans = [], isLoading: plansLoading } = useRatePlansQuery();
+  const { data: pendingSettlements = [] } = usePendingSettlementsQuery();
 
   useSessionRealtime();
 
