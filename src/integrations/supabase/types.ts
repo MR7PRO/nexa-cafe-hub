@@ -650,52 +650,88 @@ export type Database = {
       }
       sessions: {
         Row: {
+          billed_minutes: number | null
           controller_count: number | null
           created_at: string
           created_by: string | null
           device_id: string
+          discount_ils: number | null
+          effective_rate_ils: number | null
           end_time: string | null
           id: string
+          paid_from_balance: boolean
           pause_started_at: string | null
           paused_seconds: number
+          payment_status: string
+          rate_min_charge_snapshot: number | null
           rate_plan_id: string
+          rate_price_per_hour_snapshot: number | null
+          rate_rounding_minutes_snapshot: number | null
           session_mode: string | null
+          settled_at: string | null
           start_time: string
           status: Database["public"]["Enums"]["session_status"]
+          subtotal_ils: number | null
           tenant_id: string | null
+          ticket_id: string | null
           timer_minutes: number | null
+          total_ils: number | null
         }
         Insert: {
+          billed_minutes?: number | null
           controller_count?: number | null
           created_at?: string
           created_by?: string | null
           device_id: string
+          discount_ils?: number | null
+          effective_rate_ils?: number | null
           end_time?: string | null
           id?: string
+          paid_from_balance?: boolean
           pause_started_at?: string | null
           paused_seconds?: number
+          payment_status?: string
+          rate_min_charge_snapshot?: number | null
           rate_plan_id: string
+          rate_price_per_hour_snapshot?: number | null
+          rate_rounding_minutes_snapshot?: number | null
           session_mode?: string | null
+          settled_at?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["session_status"]
+          subtotal_ils?: number | null
           tenant_id?: string | null
+          ticket_id?: string | null
           timer_minutes?: number | null
+          total_ils?: number | null
         }
         Update: {
+          billed_minutes?: number | null
           controller_count?: number | null
           created_at?: string
           created_by?: string | null
           device_id?: string
+          discount_ils?: number | null
+          effective_rate_ils?: number | null
           end_time?: string | null
           id?: string
+          paid_from_balance?: boolean
           pause_started_at?: string | null
           paused_seconds?: number
+          payment_status?: string
+          rate_min_charge_snapshot?: number | null
           rate_plan_id?: string
+          rate_price_per_hour_snapshot?: number | null
+          rate_rounding_minutes_snapshot?: number | null
           session_mode?: string | null
+          settled_at?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["session_status"]
+          subtotal_ils?: number | null
           tenant_id?: string | null
+          ticket_id?: string | null
           timer_minutes?: number | null
+          total_ils?: number | null
         }
         Relationships: [
           {
@@ -717,6 +753,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -820,6 +863,32 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      ticket_counters: {
+        Row: {
+          day: string
+          last_no: number
+          tenant_id: string
+        }
+        Insert: {
+          day: string
+          last_no?: number
+          tenant_id: string
+        }
+        Update: {
+          day?: string
+          last_no?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_counters_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_items: {
         Row: {
@@ -942,6 +1011,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_promotion_discount: {
+        Args: {
+          _promotion_id: string
+          _scope: string
+          _subtotal: number
+          _tenant: string
+        }
+        Returns: number
+      }
+      compute_session_billing: { Args: { p_session_id: string }; Returns: Json }
       end_session: { Args: { p_session_id: string }; Returns: undefined }
       get_profile_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
@@ -957,8 +1036,27 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      next_ticket_no: { Args: { _tenant: string }; Returns: string }
       pause_session: { Args: { p_session_id: string }; Returns: undefined }
+      process_sale: {
+        Args: {
+          p_items: Json
+          p_manual_discount_ils?: number
+          p_payments: Json
+          p_promotion_id?: string
+        }
+        Returns: Json
+      }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
+      settle_session: {
+        Args: {
+          p_manual_discount_ils?: number
+          p_payments?: Json
+          p_promotion_id?: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
       start_session: {
         Args: {
           p_controller_count?: number
@@ -974,6 +1072,10 @@ export type Database = {
       transfer_session: {
         Args: { p_session_id: string; p_target_device_id: string }
         Returns: undefined
+      }
+      validate_payment_parts: {
+        Args: { _payments: Json; _total: number }
+        Returns: Json
       }
     }
     Enums: {
