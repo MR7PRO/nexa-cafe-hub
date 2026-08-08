@@ -136,6 +136,7 @@ export function useSessionRealtime(options?: { onTickets?: () => void }) {
       .channel(`session-data-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
         queryClient.invalidateQueries({ queryKey: sessionKeys.activeSessions });
+        queryClient.invalidateQueries({ queryKey: ['pending-settlements'] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, () => {
         queryClient.invalidateQueries({ queryKey: sessionKeys.devices });
