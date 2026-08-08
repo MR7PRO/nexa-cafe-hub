@@ -17,6 +17,8 @@ import {
   sessionKeys,
 } from '@/hooks/useSessions';
 import { useSessionWorkflow } from '@/hooks/useSessionWorkflow';
+import { usePendingSettlementsQuery } from '@/hooks/useSessionSettlement';
+import { SettleSessionDialog } from '@/components/devices/SettleSessionDialog';
 import {
   Dialog,
   DialogContent,
