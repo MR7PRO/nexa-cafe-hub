@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Plus, Monitor, Gamepad2, Tv } from 'lucide-react';
+import { Plus, Monitor, Gamepad2, Tv, Wallet } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { t } from '@/lib/i18n';
