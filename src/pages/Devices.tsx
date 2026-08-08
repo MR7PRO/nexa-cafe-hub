@@ -295,8 +295,44 @@ export default function Devices() {
         </div>
       )}
 
+      {/* Ended sessions awaiting payment collection */}
+      {pendingSettlements.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">جلسات بانتظار التحصيل</h2>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-sm text-primary">
+              {pendingSettlements.length}
+            </span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {pendingSettlements.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-xl bg-muted/50 p-3"
+              >
+                <div>
+                  <p className="font-medium text-foreground">{s.device?.name || 'جهاز'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.end_time ? new Date(s.end_time).toLocaleString('ar') : ''}
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => setSettleSessionId(s.id)}>
+                  تحصيل
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Shared session dialogs (start / end / transfer / extend) */}
       {workflow.dialogs}
+
+      <SettleSessionDialog
+        sessionId={settleSessionId}
+        onOpenChange={(open) => !open && setSettleSessionId(null)}
+      />
     </div>
   );
 }
