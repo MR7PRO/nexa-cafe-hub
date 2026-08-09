@@ -901,6 +901,7 @@ export type Database = {
           tenant_id: string | null
           ticket_id: string
           total_ils: number
+          unit_cost_ils: number | null
           unit_price_ils: number
         }
         Insert: {
@@ -913,6 +914,7 @@ export type Database = {
           tenant_id?: string | null
           ticket_id: string
           total_ils: number
+          unit_cost_ils?: number | null
           unit_price_ils: number
         }
         Update: {
@@ -925,6 +927,7 @@ export type Database = {
           tenant_id?: string | null
           ticket_id?: string
           total_ils?: number
+          unit_cost_ils?: number | null
           unit_price_ils?: number
         }
         Relationships: [
@@ -1023,6 +1026,10 @@ export type Database = {
       compute_session_billing: { Args: { p_session_id: string }; Returns: Json }
       end_session: { Args: { p_session_id: string }; Returns: undefined }
       get_profile_pin_hash: { Args: { _user_id: string }; Returns: string }
+      get_report_metrics: {
+        Args: { p_bucket?: string; p_end: string; p_start: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
