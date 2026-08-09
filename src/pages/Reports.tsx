@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
-import { 
-  BarChart3, 
-  Download, 
-  Calendar, 
-  TrendingUp, 
-  Monitor, 
-  Clock, 
+import { useMemo, useState } from 'react';
+import {
+  Download,
+  Calendar,
+  TrendingUp,
+  Monitor,
+  Clock,
   ShoppingBag,
   DollarSign,
   Gamepad2,
@@ -14,12 +13,12 @@ import {
   FileText,
   FileSpreadsheet,
   TrendingDown,
-  MinusCircle,
+  Package,
 } from 'lucide-react';
 import { exportReportPDF, exportReportExcel } from '@/lib/reportExport';
-import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -30,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { StatCard } from '@/components/ui/stat-card';
+import { useReportMetrics, type ReportPeriod } from '@/hooks/useReportMetrics';
 import {
   BarChart,
   Bar,
@@ -41,338 +41,87 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend,
   AreaChart,
   Area,
 } from 'recharts';
 
-type Period = 'daily' | 'weekly' | 'monthly';
-
-interface RevenueData {
-  date: string;
-  sessions: number;
-  products: number;
-  total: number;
-}
-
-interface DeviceStats {
-  name: string;
-  revenue: number;
-  sessions: number;
-}
-
-interface HourlyData {
-  hour: string;
-  sessions: number;
-}
-
-interface ProductStats {
-  name: string;
-  quantity: number;
-  revenue: number;
-}
-
-interface EmployeeStats {
-  name: string;
-  sessionsStarted: number;
-  ticketsClosed: number;
-  totalRevenue: number;
-}
-
 const COLORS = ['hsl(187, 100%, 50%)', 'hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(270, 70%, 55%)', 'hsl(0, 72%, 55%)'];
 
+const periodLabels: Record<ReportPeriod, string> = {
+  daily: 'آخر 7 أيام',
+  weekly: 'آخر 4 أسابيع',
+  monthly: 'آخر 6 أشهر',
+  custom: 'فترة مخصصة',
+};
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 export default function Reports() {
-  const [period, setPeriod] = useState<Period>('daily');
-  const [loading, setLoading] = useState(true);
-  
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [sessionRevenue, setSessionRevenue] = useState(0);
-  const [productRevenue, setProductRevenue] = useState(0);
-  const [totalTickets, setTotalTickets] = useState(0);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
-  const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
-  const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
-  const [topProducts, setTopProducts] = useState<ProductStats[]>([]);
-  const [employeeStats, setEmployeeStats] = useState<EmployeeStats[]>([]);
-  
+  const [period, setPeriod] = useState<ReportPeriod>('daily');
+  const [customFrom, setCustomFrom] = useState(todayStr());
+  const [customTo, setCustomTo] = useState(todayStr());
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchReports();
-  }, [period]);
+  const { data, isLoading } = useReportMetrics(period, { from: customFrom, to: customTo });
 
-  const getDateRange = () => {
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (period) {
-      case 'daily':
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case 'weekly':
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 28);
-        break;
-      case 'monthly':
-        startDate = new Date(now);
-        startDate.setMonth(startDate.getMonth() - 6);
-        break;
-    }
-    
-    return { startDate, endDate: now };
-  };
+  const m = data;
 
-  const fetchReports = async () => {
-    setLoading(true);
-    const { startDate, endDate } = getDateRange();
-    
-    await Promise.all([
-      fetchRevenueSummary(startDate),
-      fetchRevenueChart(startDate, endDate),
-      fetchDeviceStats(startDate),
-      fetchHourlyStats(startDate),
-      fetchTopProducts(startDate),
-      fetchEmployeeStats(startDate),
-      fetchExpenses(startDate),
-    ]);
-    
-    setLoading(false);
-  };
+  const totalRevenue = m?.total_revenue ?? 0;
+  const sessionRevenue = m?.session_revenue ?? 0;
+  const productRevenue = m?.product_revenue ?? 0;
+  const totalTickets = m?.total_tickets ?? 0;
+  const avgTicket = m?.avg_ticket_value ?? 0;
+  const cogs = m?.product_cogs ?? 0;
+  const grossProductProfit = m?.product_gross_profit ?? 0;
+  const expenses = m?.operating_expenses ?? 0;
+  // Operating result = revenue - product cost of goods - operating expenses
+  const operatingResult = Math.round((totalRevenue - cogs - expenses) * 100) / 100;
+  const margin = totalRevenue > 0 ? (operatingResult / totalRevenue) * 100 : 0;
 
-  const fetchRevenueSummary = async (startDate: Date) => {
-    const { data: tickets } = await supabase
-      .from('tickets')
-      .select('total_ils, ticket_items(item_type, total_ils)')
-      .eq('status', 'paid')
-      .gte('created_at', startDate.toISOString());
-
-    if (tickets) {
-      let total = 0;
-      let sessions = 0;
-      let products = 0;
-
-      tickets.forEach((ticket: any) => {
-        total += Number(ticket.total_ils);
-        ticket.ticket_items?.forEach((item: any) => {
-          if (item.item_type === 'session') {
-            sessions += Number(item.total_ils);
-          } else {
-            products += Number(item.total_ils);
-          }
-        });
-      });
-
-      setTotalRevenue(total);
-      setSessionRevenue(sessions);
-      setProductRevenue(products);
-      setTotalTickets(tickets.length);
-    }
-  };
-
-  const fetchRevenueChart = async (startDate: Date, endDate: Date) => {
-    const { data: tickets } = await supabase
-      .from('tickets')
-      .select('created_at, total_ils, ticket_items(item_type, total_ils)')
-      .eq('status', 'paid')
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString())
-      .order('created_at');
-
-    if (!tickets) return;
-
-    const groupedData: Record<string, RevenueData> = {};
-
-    tickets.forEach((ticket: any) => {
-      let dateKey: string;
-      const date = new Date(ticket.created_at);
-
-      switch (period) {
-        case 'daily':
-          dateKey = date.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' });
-          break;
-        case 'weekly':
-          const weekNum = Math.floor((date.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-          dateKey = `أسبوع ${weekNum + 1}`;
-          break;
-        case 'monthly':
-          dateKey = date.toLocaleDateString('ar-EG', { month: 'short' });
-          break;
-      }
-
-      if (!groupedData[dateKey]) {
-        groupedData[dateKey] = { date: dateKey, sessions: 0, products: 0, total: 0 };
-      }
-
-      groupedData[dateKey].total += Number(ticket.total_ils);
-      
-      ticket.ticket_items?.forEach((item: any) => {
-        if (item.item_type === 'session') {
-          groupedData[dateKey].sessions += Number(item.total_ils);
-        } else {
-          groupedData[dateKey].products += Number(item.total_ils);
-        }
-      });
+  const revenueData = useMemo(() => {
+    const series = m?.revenue_series ?? [];
+    return series.map((row) => {
+      const date = new Date(`${row.bucket}T00:00:00`);
+      let label: string;
+      if (period === 'monthly') label = date.toLocaleDateString('ar-EG', { month: 'short' });
+      else if (period === 'weekly') label = date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+      else label = date.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' });
+      return {
+        date: label,
+        sessions: Number(row.sessions),
+        products: Number(row.products),
+        total: Number(row.total),
+      };
     });
+  }, [m?.revenue_series, period]);
 
-    setRevenueData(Object.values(groupedData));
-  };
+  const deviceStats = useMemo(
+    () => (m?.devices ?? []).filter((d) => d.sessions > 0).slice(0, 5),
+    [m?.devices]
+  );
 
-  const fetchDeviceStats = async (startDate: Date) => {
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select(`
-        device_id,
-        devices(name),
-        rate_plans(price_per_hour_ils),
-        start_time,
-        end_time,
-        paused_seconds
-      `)
-      .eq('status', 'ended')
-      .gte('created_at', startDate.toISOString());
+  const hourlyData = useMemo(
+    () => (m?.peak_hours ?? []).map((h) => ({ hour: `${h.hour}:00`, sessions: Number(h.sessions) })),
+    [m?.peak_hours]
+  );
 
-    if (!sessions) return;
+  const topProducts = m?.top_products ?? [];
+  const topByQty = m?.top_products_by_qty ?? [];
+  const topByProfit = m?.top_products_by_profit ?? [];
+  const employeeStats = useMemo(
+    () =>
+      (m?.staff ?? []).map((s) => ({
+        name: s.name,
+        sessionsStarted: s.sessions_started,
+        ticketsClosed: s.tickets_closed,
+        totalRevenue: Number(s.revenue),
+      })),
+    [m?.staff]
+  );
 
-    const deviceMap: Record<string, DeviceStats> = {};
-
-    sessions.forEach((session: any) => {
-      const deviceName = session.devices?.name || 'غير معروف';
-      
-      if (!deviceMap[deviceName]) {
-        deviceMap[deviceName] = { name: deviceName, revenue: 0, sessions: 0 };
-      }
-
-      deviceMap[deviceName].sessions += 1;
-
-      if (session.end_time && session.start_time) {
-        const startTime = new Date(session.start_time).getTime();
-        const endTime = new Date(session.end_time).getTime();
-        const pausedMs = (session.paused_seconds || 0) * 1000;
-        const activeMs = endTime - startTime - pausedMs;
-        const hours = activeMs / (1000 * 60 * 60);
-        const pricePerHour = session.rate_plans?.price_per_hour_ils || 15;
-        deviceMap[deviceName].revenue += hours * pricePerHour;
-      }
-    });
-
-    const sorted = Object.values(deviceMap).sort((a, b) => b.revenue - a.revenue);
-    setDeviceStats(sorted.slice(0, 5));
-  };
-
-  const fetchHourlyStats = async (startDate: Date) => {
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select('start_time')
-      .gte('created_at', startDate.toISOString());
-
-    if (!sessions) return;
-
-    const hourlyMap: Record<number, number> = {};
-    
-    for (let i = 0; i < 24; i++) {
-      hourlyMap[i] = 0;
-    }
-
-    sessions.forEach((session: any) => {
-      const hour = new Date(session.start_time).getHours();
-      hourlyMap[hour] += 1;
-    });
-
-    const data = Object.entries(hourlyMap).map(([hour, sessions]) => ({
-      hour: `${hour}:00`,
-      sessions,
-    }));
-
-    setHourlyData(data);
-  };
-
-  const fetchTopProducts = async (startDate: Date) => {
-    const { data: items } = await supabase
-      .from('ticket_items')
-      .select('name, qty, total_ils, tickets!inner(status, created_at)')
-      .eq('item_type', 'product')
-      .eq('tickets.status', 'paid')
-      .gte('tickets.created_at', startDate.toISOString());
-
-    if (!items) return;
-
-    const productMap: Record<string, ProductStats> = {};
-
-    items.forEach((item: any) => {
-      if (!productMap[item.name]) {
-        productMap[item.name] = { name: item.name, quantity: 0, revenue: 0 };
-      }
-      productMap[item.name].quantity += item.qty;
-      productMap[item.name].revenue += Number(item.total_ils);
-    });
-
-    const sorted = Object.values(productMap).sort((a, b) => b.revenue - a.revenue);
-    setTopProducts(sorted.slice(0, 5));
-  };
-
-  const fetchEmployeeStats = async (startDate: Date) => {
-    // Fetch profiles for name mapping
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, name');
-
-    if (!profiles) return;
-
-    const profileMap = new Map(profiles.map(p => [p.id, p.name]));
-
-    // Fetch sessions created by employees
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select('created_by')
-      .gte('created_at', startDate.toISOString());
-
-    // Fetch tickets closed by employees
-    const { data: tickets } = await supabase
-      .from('tickets')
-      .select('created_by, total_ils')
-      .eq('status', 'paid')
-      .gte('created_at', startDate.toISOString());
-
-    const empMap: Record<string, EmployeeStats> = {};
-
-    sessions?.forEach((s: any) => {
-      if (!s.created_by) return;
-      const name = profileMap.get(s.created_by) || 'غير معروف';
-      if (!empMap[s.created_by]) {
-        empMap[s.created_by] = { name, sessionsStarted: 0, ticketsClosed: 0, totalRevenue: 0 };
-      }
-      empMap[s.created_by].sessionsStarted += 1;
-    });
-
-    tickets?.forEach((t: any) => {
-      if (!t.created_by) return;
-      const name = profileMap.get(t.created_by) || 'غير معروف';
-      if (!empMap[t.created_by]) {
-        empMap[t.created_by] = { name, sessionsStarted: 0, ticketsClosed: 0, totalRevenue: 0 };
-      }
-      empMap[t.created_by].ticketsClosed += 1;
-      empMap[t.created_by].totalRevenue += Number(t.total_ils);
-    });
-
-    const sorted = Object.values(empMap).sort((a, b) => b.totalRevenue - a.totalRevenue);
-    setEmployeeStats(sorted);
-  };
-
-  const fetchExpenses = async (startDate: Date) => {
-    const { data } = await supabase
-      .from('expenses')
-      .select('amount_ils')
-      .gte('created_at', startDate.toISOString());
-
-    if (data) {
-      setTotalExpenses(data.reduce((sum, e) => sum + Number(e.amount_ils), 0));
-    }
-  };
+  const periodLabel =
+    period === 'custom' ? `${customFrom} → ${customTo}` : periodLabels[period];
 
   const getExportData = () => ({
     revenueData,
@@ -380,10 +129,31 @@ export default function Reports() {
     sessionRevenue,
     productRevenue,
     totalTickets,
+    avgTicketValue: avgTicket,
+    cogs,
+    grossProductProfit,
+    operatingExpenses: expenses,
+    operatingResult,
+    profitMargin: margin,
+    sessionsCount: m?.sessions_count ?? 0,
+    avgSessionMinutes: m?.avg_session_minutes ?? 0,
+    lowStockCount: m?.low_stock_count ?? 0,
+    shiftCashDifference: m?.shift_cash_difference ?? 0,
+    devices: (m?.devices ?? []).map((d) => ({
+      name: d.name,
+      sessions: d.sessions,
+      revenue: Number(d.revenue),
+      utilization: Number(d.utilization_pct),
+    })),
     employeeStats,
-    topProducts: topProducts.map(p => ({ name: p.name, quantity: p.quantity, revenue: p.revenue })),
+    topProducts: topProducts.map((p) => ({
+      name: p.name,
+      quantity: p.quantity,
+      revenue: Number(p.revenue ?? 0),
+      profit: Number(p.profit ?? 0),
+    })),
     expenses: [],
-    periodLabel: periodLabels[period],
+    periodLabel,
   });
 
   const handleExportPDF = () => {
@@ -396,13 +166,7 @@ export default function Reports() {
     toast({ title: 'تم التصدير', description: 'تم تصدير التقرير كـ Excel' });
   };
 
-  const periodLabels = {
-    daily: 'آخر 7 أيام',
-    weekly: 'آخر 4 أسابيع',
-    monthly: 'آخر 6 أشهر',
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -413,13 +177,30 @@ export default function Reports() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{t('reports')}</h1>
           <p className="mt-1 text-muted-foreground">تحليلات وإحصائيات المبيعات</p>
         </div>
-        <div className="flex gap-3">
-          <Select value={period} onValueChange={(v: Period) => setPeriod(v)}>
+        <div className="flex flex-wrap gap-3">
+          {period === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="w-[150px]"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="w-[150px]"
+              />
+            </div>
+          )}
+          <Select value={period} onValueChange={(v: ReportPeriod) => setPeriod(v)}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="ml-2 h-4 w-4" />
               <SelectValue />
@@ -428,6 +209,7 @@ export default function Reports() {
               <SelectItem value="daily">آخر 7 أيام</SelectItem>
               <SelectItem value="weekly">آخر 4 أسابيع</SelectItem>
               <SelectItem value="monthly">آخر 6 أشهر</SelectItem>
+              <SelectItem value="custom">فترة مخصصة</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={handleExportPDF} variant="outline" className="gap-2">
@@ -447,28 +229,39 @@ export default function Reports() {
           <h3 className="text-lg font-semibold text-foreground">ملخص الأرباح والخسائر</h3>
           <TrendingDown className="h-5 w-5 text-primary" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
             <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
             <p className="mt-1 text-2xl font-bold text-success ils-amount">{formatILS(totalRevenue)}</p>
           </div>
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
-            <p className="text-sm text-muted-foreground">إجمالي المصروفات</p>
-            <p className="mt-1 text-2xl font-bold text-destructive ils-amount">{formatILS(totalExpenses)}</p>
+            <p className="text-sm text-muted-foreground">تكلفة المنتجات المباعة</p>
+            <p className="mt-1 text-2xl font-bold text-destructive ils-amount">{formatILS(cogs)}</p>
           </div>
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
-            <p className="text-sm text-muted-foreground">صافي الربح</p>
-            <p className={cn('mt-1 text-2xl font-bold ils-amount', totalRevenue - totalExpenses >= 0 ? 'text-success' : 'text-destructive')}>
-              {formatILS(totalRevenue - totalExpenses)}
+            <p className="text-sm text-muted-foreground">ربح المنتجات الإجمالي</p>
+            <p className="mt-1 text-2xl font-bold text-primary ils-amount">{formatILS(grossProductProfit)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">المصروفات التشغيلية</p>
+            <p className="mt-1 text-2xl font-bold text-destructive ils-amount">{formatILS(expenses)}</p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
+            <p className="text-sm text-muted-foreground">الناتج التشغيلي</p>
+            <p className={cn('mt-1 text-2xl font-bold ils-amount', operatingResult >= 0 ? 'text-success' : 'text-destructive')}>
+              {formatILS(operatingResult)}
             </p>
           </div>
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
             <p className="text-sm text-muted-foreground">هامش الربح</p>
             <p className={cn('mt-1 text-2xl font-bold', totalRevenue > 0 ? 'text-primary' : 'text-muted-foreground')}>
-              {totalRevenue > 0 ? `${(((totalRevenue - totalExpenses) / totalRevenue) * 100).toFixed(1)}%` : '0%'}
+              {totalRevenue > 0 ? `${margin.toFixed(1)}%` : '0%'}
             </p>
           </div>
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          الناتج التشغيلي = الإيرادات المحصّلة − تكلفة المنتجات المباعة − المصروفات التشغيلية (لا يشمل الرواتب أو الأصول غير المسجّلة كمصروفات)
+        </p>
       </div>
 
       {/* Summary Stats */}
@@ -498,10 +291,36 @@ export default function Reports() {
         />
       </div>
 
+      {/* Operations Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">متوسط قيمة الفاتورة</p>
+          <p className="mt-1 text-xl font-bold text-foreground ils-amount">{formatILS(avgTicket)}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">عدد الجلسات</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{m?.sessions_count ?? 0}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">متوسط مدة الجلسة</p>
+          <p className="mt-1 text-xl font-bold text-foreground">{Math.round(m?.avg_session_minutes ?? 0)} د</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">منتجات منخفضة المخزون</p>
+          <p className="mt-1 text-xl font-bold text-warning">{m?.low_stock_count ?? 0}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">فروقات الورديات النقدية</p>
+          <p className={cn('mt-1 text-xl font-bold ils-amount', (m?.shift_cash_difference ?? 0) < 0 ? 'text-destructive' : 'text-success')}>
+            {formatILS(m?.shift_cash_difference ?? 0)}
+          </p>
+        </div>
+      </div>
+
       {/* Revenue Chart */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">الإيرادات - {periodLabels[period]}</h3>
+          <h3 className="text-lg font-semibold text-foreground">الإيرادات - {periodLabel}</h3>
           <TrendingUp className="h-5 w-5 text-primary" />
         </div>
         <div className="h-[300px]">
@@ -576,7 +395,7 @@ export default function Reports() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [`${value.toFixed(2)} ₪`, 'الإيرادات']}
+                    formatter={(value: number) => [`${Number(value).toFixed(2)} ₪`, 'الإيرادات']}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -594,7 +413,8 @@ export default function Reports() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-muted-foreground">{device.sessions} جلسة</span>
-                  <span className="font-mono font-medium">{formatILS(device.revenue)}</span>
+                  <span className="text-muted-foreground">{Number(device.utilization_pct).toFixed(0)}% استخدام</span>
+                  <span className="font-mono font-medium">{formatILS(Number(device.revenue))}</span>
                 </div>
               </div>
             ))}
@@ -735,7 +555,7 @@ export default function Reports() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {topProducts.map((product, index) => (
+            {topProducts.slice(0, 5).map((product, index) => (
               <div 
                 key={product.name}
                 className={cn(
@@ -747,12 +567,49 @@ export default function Reports() {
                 <div className="font-medium text-foreground">{product.name}</div>
                 <div className="mt-2 text-sm text-muted-foreground">{product.quantity} وحدة</div>
                 <div className="mt-1 font-mono text-lg font-bold text-primary">
-                  {formatILS(product.revenue)}
+                  {formatILS(Number(product.revenue ?? 0))}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  ربح: {formatILS(Number(product.profit ?? 0))}
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Top by quantity / profit */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground">الأكثر مبيعاً بالكمية</h3>
+            <Package className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-2">
+            {topByQty.slice(0, 5).map((p) => (
+              <div key={p.name} className="flex items-center justify-between text-sm">
+                <span className="text-foreground">{p.name}</span>
+                <span className="text-muted-foreground">{p.quantity} وحدة</span>
+              </div>
+            ))}
+            {topByQty.length === 0 && <p className="text-sm text-muted-foreground">لا توجد بيانات</p>}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-foreground">الأعلى ربحية</h3>
+            <Download className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-2">
+            {topByProfit.slice(0, 5).map((p) => (
+              <div key={p.name} className="flex items-center justify-between text-sm">
+                <span className="text-foreground">{p.name}</span>
+                <span className="font-mono font-medium text-success">{formatILS(Number(p.profit ?? 0))}</span>
+              </div>
+            ))}
+            {topByProfit.length === 0 && <p className="text-sm text-muted-foreground">لا توجد بيانات</p>}
+          </div>
+        </div>
       </div>
     </div>
   );
