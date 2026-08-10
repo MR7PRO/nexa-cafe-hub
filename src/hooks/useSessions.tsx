@@ -214,6 +214,10 @@ export function useSessionMutations() {
         ?.find((d) => d.id === variables.deviceId);
       toast({ title: t('sessionStarted'), description: (device?.name || '') + balanceMsg });
       invalidateSessions();
+      if (variables.options.reservationId) {
+        queryClient.invalidateQueries({ queryKey: ['reservations'] });
+        queryClient.invalidateQueries({ queryKey: ['reservations-upcoming'] });
+      }
     },
     onError: fail,
   });
