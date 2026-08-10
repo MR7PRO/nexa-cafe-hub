@@ -154,6 +154,46 @@ export function DeviceCard({
       {/* Session Info */}
       {(isRunning || isPaused) && session && (
         <div className="mt-4 space-y-3">
+          {/* Customer / reservation / prepaid context */}
+          {(session.customer_name || session.reservation_id || session.paid_from_balance) && (
+            <div className="flex flex-wrap gap-2">
+              {session.customer_name && (
+                <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                  <User className="h-3 w-3" />
+                  {session.customer_name}
+                </span>
+              )}
+              {session.reservation_id && (
+                <span className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
+                  <CalendarCheck className="h-3 w-3" />
+                  حجز
+                </span>
+              )}
+              {session.paid_from_balance && (
+                <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
+                  <Wallet className="h-3 w-3" />
+                  مدفوع من الرصيد
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Paused notice */}
+          {isPaused && (
+            <div className="flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+              <Pause className="h-3 w-3" />
+              الجلسة موقوفة مؤقتاً — الوقت لا يُحسب حالياً
+            </div>
+          )}
+
+          {/* Timer ending soon warning */}
+          {isTimerMode && !timerEnded && remainingMinutes <= 5 && (
+            <div className="flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs font-medium text-warning">
+              <AlertTriangle className="h-3 w-3" />
+              ستنتهي الجلسة خلال {remainingMinutes} دقيقة
+            </div>
+          )}
+
           {/* Timer Progress Bar */}
           {isTimerMode && (
             <div className="relative h-2 rounded-full bg-muted overflow-hidden">
@@ -166,6 +206,7 @@ export function DeviceCard({
               />
             </div>
           )}
+
 
           <div className="rounded-lg bg-muted/50 p-3">
             {/* Time Display */}
