@@ -242,9 +242,10 @@ export function DeviceCard({
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{t('cost')}</span>
               <span className="font-mono text-lg font-bold text-primary">
-                {formatILS(currentCost)}
+                {session.paid_from_balance ? formatILS(0) : formatILS(currentCost)}
               </span>
             </div>
+
 
             {/* Rate Plan */}
             <div className="mt-2 flex items-center justify-between">
