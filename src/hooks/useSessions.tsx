@@ -98,6 +98,10 @@ export function useActiveSessionsQuery() {
           session_mode,
           timer_minutes,
           controller_count,
+          paid_from_balance,
+          customer_id,
+          reservation_id,
+          customers ( name ),
           rate_plans!inner (
             name,
             price_per_hour_ils
@@ -108,7 +112,11 @@ export function useActiveSessionsQuery() {
 
       const map: Record<string, ActiveSession> = {};
       (data || []).forEach((s: any) => {
-        map[s.device_id] = { ...s, rate_plan: s.rate_plans } as ActiveSession;
+        map[s.device_id] = {
+          ...s,
+          customer_name: s.customers?.name ?? null,
+          rate_plan: s.rate_plans,
+        } as ActiveSession;
       });
       return map;
     },
