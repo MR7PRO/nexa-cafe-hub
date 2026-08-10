@@ -1,4 +1,4 @@
-import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock } from 'lucide-react';
+import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock, User, CalendarCheck, Wallet, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t, formatILS, formatDuration } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,9 @@ interface Session {
   session_mode?: 'meter' | 'timer';
   timer_minutes?: number | null;
   controller_count?: number;
+  customer_name?: string | null;
+  reservation_id?: string | null;
+  paid_from_balance?: boolean;
   rate_plan: {
     name: string;
     price_per_hour_ils: number;
