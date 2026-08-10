@@ -589,13 +589,16 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          customer_id: string | null
           customer_name: string
           customer_phone: string | null
           device_id: string
           end_time: string
+          fulfilled_at: string | null
           id: string
           notes: string | null
           reserved_date: string
+          session_id: string | null
           start_time: string
           status: string
           tenant_id: string | null
@@ -604,13 +607,16 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           customer_name: string
           customer_phone?: string | null
           device_id: string
           end_time: string
+          fulfilled_at?: string | null
           id?: string
           notes?: string | null
           reserved_date: string
+          session_id?: string | null
           start_time: string
           status?: string
           tenant_id?: string | null
@@ -619,13 +625,16 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           device_id?: string
           end_time?: string
+          fulfilled_at?: string | null
           id?: string
           notes?: string | null
           reserved_date?: string
+          session_id?: string | null
           start_time?: string
           status?: string
           tenant_id?: string | null
@@ -633,10 +642,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reservations_device_id_fkey"
             columns: ["device_id"]
             isOneToOne: false
             referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
           {
@@ -654,6 +677,7 @@ export type Database = {
           controller_count: number | null
           created_at: string
           created_by: string | null
+          customer_id: string | null
           device_id: string
           discount_ils: number | null
           effective_rate_ils: number | null
@@ -667,6 +691,7 @@ export type Database = {
           rate_plan_id: string
           rate_price_per_hour_snapshot: number | null
           rate_rounding_minutes_snapshot: number | null
+          reservation_id: string | null
           session_mode: string | null
           settled_at: string | null
           start_time: string
@@ -682,6 +707,7 @@ export type Database = {
           controller_count?: number | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           device_id: string
           discount_ils?: number | null
           effective_rate_ils?: number | null
@@ -695,6 +721,7 @@ export type Database = {
           rate_plan_id: string
           rate_price_per_hour_snapshot?: number | null
           rate_rounding_minutes_snapshot?: number | null
+          reservation_id?: string | null
           session_mode?: string | null
           settled_at?: string | null
           start_time?: string
@@ -710,6 +737,7 @@ export type Database = {
           controller_count?: number | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           device_id?: string
           discount_ils?: number | null
           effective_rate_ils?: number | null
@@ -723,6 +751,7 @@ export type Database = {
           rate_plan_id?: string
           rate_price_per_hour_snapshot?: number | null
           rate_rounding_minutes_snapshot?: number | null
+          reservation_id?: string | null
           session_mode?: string | null
           settled_at?: string | null
           start_time?: string
@@ -735,6 +764,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sessions_device_id_fkey"
             columns: ["device_id"]
             isOneToOne: false
@@ -746,6 +782,13 @@ export type Database = {
             columns: ["rate_plan_id"]
             isOneToOne: false
             referencedRelation: "rate_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
           {
@@ -952,6 +995,7 @@ export type Database = {
           closed_at: string | null
           created_at: string
           created_by: string | null
+          customer_id: string | null
           discount_ils: number
           id: string
           status: Database["public"]["Enums"]["ticket_status"]
@@ -963,6 +1007,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           discount_ils?: number
           id?: string
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -974,6 +1019,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           discount_ils?: number
           id?: string
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -982,6 +1028,13 @@ export type Database = {
           total_ils?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1025,6 +1078,10 @@ export type Database = {
       }
       compute_session_billing: { Args: { p_session_id: string }; Returns: Json }
       end_session: { Args: { p_session_id: string }; Returns: undefined }
+      find_or_create_customer: {
+        Args: { p_name: string; p_phone?: string }
+        Returns: string
+      }
       get_profile_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_report_metrics: {
         Args: { p_bucket?: string; p_end: string; p_start: string }
@@ -1045,15 +1102,26 @@ export type Database = {
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       next_ticket_no: { Args: { _tenant: string }; Returns: string }
       pause_session: { Args: { p_session_id: string }; Returns: undefined }
-      process_sale: {
-        Args: {
-          p_items: Json
-          p_manual_discount_ils?: number
-          p_payments: Json
-          p_promotion_id?: string
-        }
-        Returns: Json
-      }
+      process_sale:
+        | {
+            Args: {
+              p_items: Json
+              p_manual_discount_ils?: number
+              p_payments: Json
+              p_promotion_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_customer_id?: string
+              p_items: Json
+              p_manual_discount_ils?: number
+              p_payments: Json
+              p_promotion_id?: string
+            }
+            Returns: Json
+          }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
       settle_session: {
         Args: {
@@ -1064,18 +1132,33 @@ export type Database = {
         }
         Returns: Json
       }
-      start_session: {
-        Args: {
-          p_controller_count?: number
-          p_customer_balance_id?: string
-          p_deduct_minutes?: number
-          p_device_id: string
-          p_rate_plan_id: string
-          p_session_mode?: string
-          p_timer_minutes?: number
-        }
-        Returns: string
-      }
+      start_session:
+        | {
+            Args: {
+              p_controller_count?: number
+              p_customer_balance_id?: string
+              p_deduct_minutes?: number
+              p_device_id: string
+              p_rate_plan_id: string
+              p_session_mode?: string
+              p_timer_minutes?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_controller_count?: number
+              p_customer_balance_id?: string
+              p_customer_id?: string
+              p_deduct_minutes?: number
+              p_device_id: string
+              p_rate_plan_id: string
+              p_reservation_id?: string
+              p_session_mode?: string
+              p_timer_minutes?: number
+            }
+            Returns: string
+          }
       transfer_session: {
         Args: { p_session_id: string; p_target_device_id: string }
         Returns: undefined
