@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Timer, Gauge, Gamepad, Users, Wallet } from 'lucide-react';
+import { Play, Timer, Gauge, Gamepad, Users, Wallet, CalendarCheck } from 'lucide-react';
 import { formatILS } from '@/lib/i18n';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { CustomerPicker } from '@/components/customers/CustomerPicker';
+import type { CustomerSummary } from '@/hooks/useCustomers';
 
 interface RatePlan {
   id: string;
@@ -37,6 +39,16 @@ interface CustomerBalance {
   package_name: string;
 }
 
+/** Context handed over from a reservation so staff never retype the details. */
+export interface StartSessionPrefill {
+  customerId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  reservationId?: string | null;
+  reservationLabel?: string | null;
+  timerMinutes?: number | null;
+}
+
 interface StartSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,6 +59,7 @@ interface StartSessionDialogProps {
     default_rate_plan_id: string | null;
   } | null;
   ratePlans: RatePlan[];
+  prefill?: StartSessionPrefill | null;
   onStart: (options: {
     ratePlanId: string;
     sessionMode: 'meter' | 'timer';
@@ -54,6 +67,8 @@ interface StartSessionDialogProps {
     controllerCount: number;
     customerBalanceId?: string;
     deductMinutes?: number;
+    customerId?: string;
+    reservationId?: string;
   }) => void;
   isLoading?: boolean;
 }
