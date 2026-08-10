@@ -26,6 +26,10 @@ export interface ActiveSession {
   session_mode?: 'meter' | 'timer';
   timer_minutes?: number | null;
   controller_count?: number;
+  paid_from_balance?: boolean;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  reservation_id?: string | null;
   rate_plan: {
     name: string;
     price_per_hour_ils: number;
@@ -45,6 +49,8 @@ export interface StartSessionOptions {
   controllerCount: number;
   customerBalanceId?: string;
   deductMinutes?: number;
+  customerId?: string;
+  reservationId?: string;
 }
 
 /* ------------------------------------------------------------------ */
