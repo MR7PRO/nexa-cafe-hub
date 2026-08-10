@@ -104,12 +104,19 @@ export function useSessionWorkflow({ devices, sessions, ratePlans }: UseSessionW
     <>
       <StartSessionDialog
         open={!!startDeviceId}
-        onOpenChange={(open) => !open && setStartDeviceId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStartDeviceId(null);
+            setStartPrefill(null);
+          }
+        }}
         device={deviceById(startDeviceId)}
         ratePlans={ratePlans}
+        prefill={startPrefill}
         onStart={handleStart}
         isLoading={startSession.isPending}
       />
+
 
       <ConfirmDialog
         open={!!endDeviceId}
