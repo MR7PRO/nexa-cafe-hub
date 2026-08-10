@@ -80,6 +80,7 @@ export function StartSessionDialog({
   onOpenChange,
   device,
   ratePlans,
+  prefill,
   onStart,
   isLoading,
 }: StartSessionDialogProps) {
@@ -87,7 +88,8 @@ export function StartSessionDialog({
   const [timerMinutes, setTimerMinutes] = useState(60);
   const [controllerCount, setControllerCount] = useState(1);
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<string>('');
-  
+  const [customer, setCustomer] = useState<CustomerSummary | null>(null);
+
   // Customer balance state
   const [useBalance, setUseBalance] = useState(false);
   const [customerBalances, setCustomerBalances] = useState<CustomerBalance[]>([]);
@@ -102,6 +104,30 @@ export function StartSessionDialog({
       fetchCustomerBalances();
     }
   }, [open]);
+
+  // Reset / apply reservation prefill whenever the dialog opens
+  useEffect(() => {
+    if (!open || !device) return;
+    setSessionMode(prefill?.timerMinutes ? 'timer' : 'meter');
+    setTimerMinutes(prefill?.timerMinutes || 60);
+    setControllerCount(1);
+    setSelectedRatePlanId(device.default_rate_plan_id || ratePlans[0]?.id || '');
+    setUseBalance(false);
+    setSelectedBalanceId('');
+    setBalanceMinutesToUse(60);
+    setCustomer(
+      prefill?.customerId
+        ? {
+            id: prefill.customerId,
+            name: prefill.customerName || 'زبون',
+            phone: prefill.customerPhone || null,
+            remaining_minutes: 0,
+            primary_balance_id: null,
+          }
+        : null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, device?.id, prefill?.reservationId, prefill?.customerId]);
 
   const fetchCustomerBalances = async () => {
     const { data } = await supabase
@@ -129,7 +155,12 @@ export function StartSessionDialog({
     }
   };
 
-  const selectedBalance = customerBalances.find(b => b.id === selectedBalanceId);
+  // When a customer is chosen, only their prepaid balances are offered.
+  const visibleBalances = customer
+    ? customerBalances.filter((b) => b.customer_id === customer.id)
+    : customerBalances;
+
+  const selectedBalance = visibleBalances.find(b => b.id === selectedBalanceId);
 
   // Get selected rate plan
   const selectedPlan = ratePlans.find(p => p.id === selectedRatePlanId) || ratePlans[0];
@@ -150,39 +181,33 @@ export function StartSessionDialog({
     const ratePlanId = selectedRatePlanId || device?.default_rate_plan_id || ratePlans[0]?.id;
     if (!ratePlanId) return;
 
+    const shared = {
+      controllerCount: isPlaystation ? controllerCount : 1,
+      customerId: customer?.id,
+      reservationId: prefill?.reservationId || undefined,
+    };
+
     if (useBalance && selectedBalance) {
       const mins = Math.min(balanceMinutesToUse, selectedBalance.remaining_minutes);
       onStart({
+        ...shared,
         ratePlanId,
         sessionMode: 'timer',
         timerMinutes: mins,
-        controllerCount: isPlaystation ? controllerCount : 1,
         customerBalanceId: selectedBalance.id,
         deductMinutes: mins,
       });
     } else {
       onStart({
+        ...shared,
         ratePlanId,
         sessionMode,
         timerMinutes: sessionMode === 'timer' ? timerMinutes : undefined,
-        controllerCount: isPlaystation ? controllerCount : 1,
       });
     }
   };
 
-  // Reset state when dialog opens
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen && device) {
-      setSessionMode('meter');
-      setTimerMinutes(60);
-      setControllerCount(1);
-      setSelectedRatePlanId(device.default_rate_plan_id || ratePlans[0]?.id || '');
-      setUseBalance(false);
-      setSelectedBalanceId('');
-      setBalanceMinutesToUse(60);
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = (newOpen: boolean) => onOpenChange(newOpen);
 
   if (!device) return null;
 
