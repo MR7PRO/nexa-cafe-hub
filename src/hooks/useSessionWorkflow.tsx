@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StartSessionDialog } from '@/components/devices/StartSessionDialog';
+import { StartSessionDialog, type StartSessionPrefill } from '@/components/devices/StartSessionDialog';
 import { TransferSessionDialog } from '@/components/devices/TransferSessionDialog';
 import { ExtendTimerDialog } from '@/components/devices/ExtendTimerDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -19,21 +19,25 @@ interface UseSessionWorkflowArgs {
 }
 
 /**
- * Shared session workflow (dialogs + actions) used by both /devices and the
- * dashboard so a given action behaves identically everywhere.
+ * Shared session workflow (dialogs + actions) used by /devices, the dashboard
+ * and reservations so a given action behaves identically everywhere.
  */
 export function useSessionWorkflow({ devices, sessions, ratePlans }: UseSessionWorkflowArgs) {
   const { startSession, pauseSession, resumeSession, endSession, transferSession, extendTimer } =
     useSessionMutations();
 
   const [startDeviceId, setStartDeviceId] = useState<string | null>(null);
+  const [startPrefill, setStartPrefill] = useState<StartSessionPrefill | null>(null);
   const [endDeviceId, setEndDeviceId] = useState<string | null>(null);
   const [transferDeviceId, setTransferDeviceId] = useState<string | null>(null);
   const [extendDeviceId, setExtendDeviceId] = useState<string | null>(null);
 
   const deviceById = (id: string | null) => devices.find((d) => d.id === id) || null;
 
-  const openStart = (deviceId: string) => setStartDeviceId(deviceId);
+  const openStart = (deviceId: string, prefill?: StartSessionPrefill | null) => {
+    setStartPrefill(prefill || null);
+    setStartDeviceId(deviceId);
+  };
   const openEnd = (deviceId: string) => setEndDeviceId(deviceId);
   const openTransfer = (deviceId: string) => setTransferDeviceId(deviceId);
   const openExtendTimer = (deviceId: string) => setExtendDeviceId(deviceId);
@@ -53,6 +57,7 @@ export function useSessionWorkflow({ devices, sessions, ratePlans }: UseSessionW
     try {
       await startSession.mutateAsync({ deviceId: startDeviceId, options });
       setStartDeviceId(null);
+      setStartPrefill(null);
     } catch {
       /* toast handled in mutation */
     }
@@ -99,12 +104,19 @@ export function useSessionWorkflow({ devices, sessions, ratePlans }: UseSessionW
     <>
       <StartSessionDialog
         open={!!startDeviceId}
-        onOpenChange={(open) => !open && setStartDeviceId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStartDeviceId(null);
+            setStartPrefill(null);
+          }
+        }}
         device={deviceById(startDeviceId)}
         ratePlans={ratePlans}
+        prefill={startPrefill}
         onStart={handleStart}
         isLoading={startSession.isPending}
       />
+
 
       <ConfirmDialog
         open={!!endDeviceId}

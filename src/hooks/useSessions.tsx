@@ -26,6 +26,10 @@ export interface ActiveSession {
   session_mode?: 'meter' | 'timer';
   timer_minutes?: number | null;
   controller_count?: number;
+  paid_from_balance?: boolean;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  reservation_id?: string | null;
   rate_plan: {
     name: string;
     price_per_hour_ils: number;
@@ -45,6 +49,8 @@ export interface StartSessionOptions {
   controllerCount: number;
   customerBalanceId?: string;
   deductMinutes?: number;
+  customerId?: string;
+  reservationId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -92,6 +98,10 @@ export function useActiveSessionsQuery() {
           session_mode,
           timer_minutes,
           controller_count,
+          paid_from_balance,
+          customer_id,
+          reservation_id,
+          customers ( name ),
           rate_plans!inner (
             name,
             price_per_hour_ils
@@ -102,7 +112,11 @@ export function useActiveSessionsQuery() {
 
       const map: Record<string, ActiveSession> = {};
       (data || []).forEach((s: any) => {
-        map[s.device_id] = { ...s, rate_plan: s.rate_plans } as ActiveSession;
+        map[s.device_id] = {
+          ...s,
+          customer_name: s.customers?.name ?? null,
+          rate_plan: s.rate_plans,
+        } as ActiveSession;
       });
       return map;
     },
@@ -186,6 +200,8 @@ export function useSessionMutations() {
         p_controller_count: options.controllerCount,
         p_customer_balance_id: options.customerBalanceId ?? null,
         p_deduct_minutes: options.deductMinutes ?? null,
+        p_customer_id: options.customerId ?? null,
+        p_reservation_id: options.reservationId ?? null,
       });
       if (error) throw error;
     },
@@ -198,6 +214,10 @@ export function useSessionMutations() {
         ?.find((d) => d.id === variables.deviceId);
       toast({ title: t('sessionStarted'), description: (device?.name || '') + balanceMsg });
       invalidateSessions();
+      if (variables.options.reservationId) {
+        queryClient.invalidateQueries({ queryKey: ['reservations'] });
+        queryClient.invalidateQueries({ queryKey: ['reservations-upcoming'] });
+      }
     },
     onError: fail,
   });
