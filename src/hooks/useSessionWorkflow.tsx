@@ -57,6 +57,7 @@ export function useSessionWorkflow({ devices, sessions, ratePlans }: UseSessionW
     try {
       await startSession.mutateAsync({ deviceId: startDeviceId, options });
       setStartDeviceId(null);
+      setStartPrefill(null);
     } catch {
       /* toast handled in mutation */
     }
