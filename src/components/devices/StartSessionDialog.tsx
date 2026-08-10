@@ -222,8 +222,29 @@ export function StartSessionDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Reservation context */}
+          {prefill?.reservationId && (
+            <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm">
+              <CalendarCheck className="h-4 w-4 shrink-0 text-primary" />
+              <span className="text-foreground">
+                بدء من حجز {prefill.reservationLabel ? `(${prefill.reservationLabel})` : ''} — سيتم
+                تعليم الحجز كمكتمل تلقائياً
+              </span>
+            </div>
+          )}
+
+          {/* Customer (optional) */}
+          <CustomerPicker
+            label="الزبون (اختياري)"
+            value={customer}
+            onChange={(c) => {
+              setCustomer(c);
+              setSelectedBalanceId('');
+            }}
+          />
+
           {/* Use Customer Balance Toggle */}
-          {customerBalances.length > 0 && (
+          {visibleBalances.length > 0 && (
             <div className="space-y-3 rounded-xl border-2 border-dashed border-accent/50 p-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold flex items-center gap-2">
@@ -237,14 +258,14 @@ export function StartSessionDialog({
                 <div className="space-y-3 pt-2">
                   <Select value={selectedBalanceId} onValueChange={(v) => {
                     setSelectedBalanceId(v);
-                    const bal = customerBalances.find(b => b.id === v);
+                    const bal = visibleBalances.find(b => b.id === v);
                     if (bal) setBalanceMinutesToUse(Math.min(60, bal.remaining_minutes));
                   }}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر زبون وباقة" />
                     </SelectTrigger>
                     <SelectContent>
-                      {customerBalances.map((b) => (
+                      {visibleBalances.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
                           {b.customer_name} - {b.package_name} ({b.remaining_minutes} دقيقة متبقية)
                         </SelectItem>
