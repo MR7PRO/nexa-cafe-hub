@@ -200,6 +200,8 @@ export function useSessionMutations() {
         p_controller_count: options.controllerCount,
         p_customer_balance_id: options.customerBalanceId ?? null,
         p_deduct_minutes: options.deductMinutes ?? null,
+        p_customer_id: options.customerId ?? null,
+        p_reservation_id: options.reservationId ?? null,
       });
       if (error) throw error;
     },
