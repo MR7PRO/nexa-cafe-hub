@@ -73,8 +73,9 @@ export default function Auth() {
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       if (data?.valid) {
-        setInviteInfo(data);
+        setInviteInfo({ ...data, code });
         setIsLogin(false);
+
       }
     } catch (err: any) {
       setInviteError(err.message || 'كود دعوة غير صالح');
