@@ -125,8 +125,8 @@ export default function Auth() {
           navigate('/');
         }
       } else {
-        // If registering via invite, pass tenant_id in metadata
-        const options = inviteInfo ? { tenantId: inviteInfo.tenant_id } : undefined;
+        // Registration via invite: the server validates and consumes the code
+        const options = inviteInfo ? { inviteCode: inviteInfo.code } : undefined;
         const { error } = await signUp(email, password, name, options);
         if (error) {
           toast({
@@ -137,14 +137,7 @@ export default function Auth() {
             variant: 'destructive',
           });
         } else {
-          // Increment invite usage if via invite
-          if (inviteInfo) {
-            try {
-              await supabase.functions.invoke('use-invite', {
-                body: { invitation_id: inviteInfo.invitation_id },
-              });
-            } catch {}
-          }
+
           toast({
             title: 'تم إنشاء الحساب',
             description: 'يرجى التحقق من بريدك الإلكتروني لتأكيد الحساب',
