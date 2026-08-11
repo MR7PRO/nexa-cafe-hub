@@ -54,9 +54,6 @@ Deno.serve(async (req) => {
       }
 
       const metadata: Record<string, string> = { name };
-      if (role === "cashier" && tenant_id) {
-        metadata.tenant_id = tenant_id;
-      }
       if (role === "admin" && cafe_name) {
         metadata.cafe_name = cafe_name;
       }
@@ -71,6 +68,24 @@ Deno.serve(async (req) => {
       if (createError) {
         return new Response(JSON.stringify({ error: createError.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+
+      // Non-admin users are attached to an existing tenant by the super admin
+      if (role !== "admin" && tenant_id) {
+        const { data: created } = await adminClient
+          .from("profiles")
+          .select("tenant_id")
+          .eq("id", newUser.user.id)
+          .single();
+
+        await adminClient.from("profiles").update({ tenant_id }).eq("id", newUser.user.id);
+        await adminClient.from("user_roles").update({ role }).eq("user_id", newUser.user.id);
+
+        // Remove the placeholder tenant auto-created during signup
+        if (created?.tenant_id && created.tenant_id !== tenant_id) {
+          await adminClient.from("tenants").delete().eq("id", created.tenant_id);
+        }
+      }
+
 
       return new Response(JSON.stringify({ user: { id: newUser.user.id, email: newUser.user.email } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
