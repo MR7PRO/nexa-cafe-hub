@@ -27,7 +27,9 @@ interface InviteInfo {
   tenant_name: string;
   role: string;
   invitation_id: string;
+  code: string;
 }
+
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
