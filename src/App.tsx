@@ -11,6 +11,8 @@ import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvide
 import { OfflineSyncProvider } from "@/contexts/OfflineSyncContext";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { HelmetProvider } from "react-helmet-async";
+import { RouteMeta } from "@/components/RouteMeta";
 
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -76,6 +78,7 @@ function AppRoutes() {
 
   return (
     <Suspense fallback={fallback}>
+      <RouteMeta />
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -99,6 +102,7 @@ function AppRoutes() {
 }
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
@@ -115,6 +119,7 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

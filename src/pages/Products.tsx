@@ -327,6 +327,7 @@ export default function Products() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`تعديل المنتج ${product.name}`}
                           onClick={() => openEdit(product)}
                         >
                           <Edit2 className="h-4 w-4" />
@@ -334,6 +335,7 @@ export default function Products() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={product.is_active ? `تعطيل المنتج ${product.name}` : `تنشيط المنتج ${product.name}`}
                           onClick={() => toggleActive(product)}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />

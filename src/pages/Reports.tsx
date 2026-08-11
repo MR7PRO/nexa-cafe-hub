@@ -226,7 +226,7 @@ export default function Reports() {
       {/* Profit & Loss Summary */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">ملخص الأرباح والخسائر</h3>
+          <h2 className="text-lg font-semibold text-foreground">ملخص الأرباح والخسائر</h2>
           <TrendingDown className="h-5 w-5 text-primary" />
         </div>
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -320,7 +320,7 @@ export default function Reports() {
       {/* Revenue Chart */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">الإيرادات - {periodLabel}</h3>
+          <h2 className="text-lg font-semibold text-foreground">الإيرادات - {periodLabel}</h2>
           <TrendingUp className="h-5 w-5 text-primary" />
         </div>
         <div className="h-[300px]">
@@ -362,7 +362,7 @@ export default function Reports() {
         {/* Top Devices */}
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">أفضل الأجهزة</h3>
+            <h2 className="text-lg font-semibold text-foreground">أفضل الأجهزة</h2>
             <Monitor className="h-5 w-5 text-primary" />
           </div>
           {deviceStats.length === 0 ? (
@@ -424,7 +424,7 @@ export default function Reports() {
         {/* Peak Hours */}
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">ساعات الذروة</h3>
+            <h2 className="text-lg font-semibold text-foreground">ساعات الذروة</h2>
             <Clock className="h-5 w-5 text-primary" />
           </div>
           <div className="h-[250px]">
@@ -481,7 +481,7 @@ export default function Reports() {
       {/* Employee Performance */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">أداء الموظفين</h3>
+          <h2 className="text-lg font-semibold text-foreground">أداء الموظفين</h2>
           <UserCheck className="h-5 w-5 text-primary" />
         </div>
         {employeeStats.length === 0 ? (
@@ -546,7 +546,7 @@ export default function Reports() {
       {/* Top Products */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">أفضل المنتجات مبيعاً</h3>
+          <h2 className="text-lg font-semibold text-foreground">أفضل المنتجات مبيعاً</h2>
           <ShoppingBag className="h-5 w-5 text-primary" />
         </div>
         {topProducts.length === 0 ? (
@@ -582,7 +582,7 @@ export default function Reports() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">الأكثر مبيعاً بالكمية</h3>
+            <h2 className="text-lg font-semibold text-foreground">الأكثر مبيعاً بالكمية</h2>
             <Package className="h-5 w-5 text-primary" />
           </div>
           <div className="space-y-2">
@@ -597,7 +597,7 @@ export default function Reports() {
         </div>
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">الأعلى ربحية</h3>
+            <h2 className="text-lg font-semibold text-foreground">الأعلى ربحية</h2>
             <Download className="h-5 w-5 text-primary" />
           </div>
           <div className="space-y-2">
