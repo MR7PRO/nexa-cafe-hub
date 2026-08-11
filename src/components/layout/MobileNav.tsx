@@ -115,6 +115,7 @@ export function MobileNav() {
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
+                aria-label="إغلاق القائمة"
                 className="rounded-xl p-2 text-muted-foreground hover:bg-muted"
               >
                 <X className="h-5 w-5" />
