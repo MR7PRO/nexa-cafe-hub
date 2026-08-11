@@ -296,13 +296,14 @@ export function DeviceCard({
                 onClick={onExtendTimer} 
                 variant="outline" 
                 size="icon" 
+                aria-label={t('extendTimer')}
                 className="touch-target border-primary/50 hover:bg-primary/10"
                 title={t('extendTimer')}
               >
                 <Clock className="h-4 w-4 text-primary" />
               </Button>
             )}
-            <Button onClick={onTransfer} variant="outline" size="icon" className="touch-target">
+            <Button onClick={onTransfer} variant="outline" size="icon" aria-label={t('transferSession')} className="touch-target">
               <ArrowLeftRight className="h-4 w-4" />
             </Button>
           </>

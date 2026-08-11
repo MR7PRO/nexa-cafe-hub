@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: false,
       },
-      includeAssets: ["favicon.ico", "favicon.png", "notification.mp3", "robots.txt", "logo-192.png", "logo-512.png"],
+      includeAssets: ["favicon.ico", "favicon.png", "notification.mp3", "robots.txt", "sitemap.xml", "logo-192.png", "logo-512.png"],
       manifest: {
         name: "NexaCafe - نظام إدارة المقهى",
         short_name: "NexaCafe",

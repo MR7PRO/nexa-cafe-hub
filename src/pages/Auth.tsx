@@ -178,7 +178,7 @@ export default function Auth() {
               style={{ filter: 'drop-shadow(0 0 30px hsl(190 100% 50% / 0.4)) drop-shadow(0 0 60px hsl(270 80% 60% / 0.3))' }}
             />
           </div>
-          <h1 className="text-4xl font-bold text-gradient-logo font-gaming tracking-widest">NexaCafe</h1>
+          <h1 className="text-4xl font-bold text-gradient-logo font-gaming tracking-widest">NexaCafe — نظام إدارة المقاهي ومراكز الألعاب</h1>
           <p className="mt-2 text-muted-foreground text-base">نيكسا كافيه • نظام إدارة مقهى</p>
         </div>
 
