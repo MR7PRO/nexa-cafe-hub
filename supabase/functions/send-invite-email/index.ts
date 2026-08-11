@@ -49,6 +49,44 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Only admins/managers of the invitation's own tenant may generate invite emails
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const [{ data: callerProfile }, { data: callerRole }] = await Promise.all([
+      adminClient.from("profiles").select("tenant_id").eq("id", user.id).maybeSingle(),
+      adminClient.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
+    ]);
+
+    const allowed = ["admin", "manager", "super_admin"];
+    if (!callerRole || !allowed.includes(callerRole.role)) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: invitation } = await adminClient
+      .from("invitations")
+      .select("id, tenant_id, role, is_active")
+      .eq("code", String(code).trim().toUpperCase())
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (
+      !invitation ||
+      (callerRole.role !== "super_admin" &&
+        invitation.tenant_id !== callerProfile?.tenant_id)
+    ) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     // Get tenant name for the email
     const { data: profile } = await supabase
       .from("profiles")
