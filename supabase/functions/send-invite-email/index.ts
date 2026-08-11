@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       req.headers.get("origin") ||
       "https://nexa-cafe-hub.lovable.app";
     const inviteLink = `${siteUrl}/auth?invite=${code}`;
-    const roleLabel = role === "manager" ? "مشرف" : "كاشير";
+    const roleLabel = invitation.role === "manager" ? "مشرف" : "كاشير";
 
     // Use Lovable AI to generate email content
     const aiResponse = await fetch(
