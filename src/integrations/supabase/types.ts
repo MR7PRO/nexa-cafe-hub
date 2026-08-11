@@ -456,7 +456,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          pin_hash: string | null
           tenant_id: string | null
           updated_at: string
         }
@@ -465,7 +464,6 @@ export type Database = {
           created_at?: string
           id: string
           name: string
-          pin_hash?: string | null
           tenant_id?: string | null
           updated_at?: string
         }
@@ -474,7 +472,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          pin_hash?: string | null
           tenant_id?: string | null
           updated_at?: string
         }
@@ -1082,7 +1079,6 @@ export type Database = {
         Args: { p_name: string; p_phone?: string }
         Returns: string
       }
-      get_profile_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_report_metrics: {
         Args: { p_bucket?: string; p_end: string; p_start: string }
         Returns: Json
