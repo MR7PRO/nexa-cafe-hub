@@ -144,6 +144,7 @@ export default function POS() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="تقليل الكمية"
                     className="h-8 w-8"
                     onClick={() => pos.updateQuantity(item.id, -1)}
                   >
@@ -153,6 +154,7 @@ export default function POS() {
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="زيادة الكمية"
                     className="h-8 w-8"
                     disabled={item.stock !== null && item.qty >= item.stock}
                     onClick={() => pos.updateQuantity(item.id, 1)}
@@ -162,6 +164,7 @@ export default function POS() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="حذف من السلة"
                     className="h-8 w-8 text-destructive hover:text-destructive"
                     onClick={() => pos.removeFromCart(item.id)}
                   >
