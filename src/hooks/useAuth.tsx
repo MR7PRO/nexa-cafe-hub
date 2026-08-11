@@ -13,7 +13,7 @@ interface AuthContextType {
   profile: { name: string; avatar_url: string | null } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name: string, options?: { tenantId?: string; cafeName?: string }) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, options?: { inviteCode?: string; cafeName?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
