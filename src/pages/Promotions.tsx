@@ -63,7 +63,7 @@ export default function Promotions() {
     end_date: '',
   });
 
-  const canManage = role === 'admin' || role === 'manager';
+  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
 
   useEffect(() => {
     fetchPromotions();
