@@ -253,6 +253,32 @@
     background-clip: text;
   }
 
+  /* Animated gradient text shimmer */
+  .text-shimmer {
+    background-size: 250% 100%;
+    animation: text-shimmer 4s linear infinite;
+  }
+
+  @keyframes text-shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 250% 50%; }
+  }
+
+  /* Glowing text pulse */
+  .text-glow-pulse {
+    animation: text-glow-pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes text-glow-pulse {
+    0%, 100% {
+      text-shadow: 0 0 12px hsl(190 100% 50% / 0.3), 0 0 24px hsl(270 80% 60% / 0.2);
+    }
+    50% {
+      text-shadow: 0 0 20px hsl(190 100% 50% / 0.55), 0 0 40px hsl(270 80% 60% / 0.35), 0 0 60px hsl(190 100% 50% / 0.15);
+    }
+  }
+
+
   /* Gaming Font for Headers */
   .font-gaming {
     font-family: 'Orbitron', sans-serif;
