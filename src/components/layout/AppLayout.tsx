@@ -1,6 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
+import { FullscreenToggle } from './FullscreenToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AppLayoutProps {
@@ -17,6 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <main className="min-h-screen pb-20 pt-2 px-3">
           {children}
         </main>
+        <FullscreenToggle />
       </div>
     );
   }
@@ -27,6 +29,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main className="mr-64 min-h-screen p-6">
         {children}
       </main>
+      <FullscreenToggle />
     </div>
   );
 }
+
