@@ -88,7 +88,7 @@ export default function Loyalty() {
 
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const canManage = role === 'admin' || role === 'manager';
+  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
 
   useEffect(() => {
     fetchData();

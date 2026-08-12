@@ -88,7 +88,7 @@ export default function Tickets() {
   
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const canRefund = role === 'admin' || role === 'manager';
+  const canRefund = role === 'admin' || role === 'manager' || role === 'super_admin';
 
   useEffect(() => {
     fetchTickets();
