@@ -3,6 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/lib/i18n';
+import {
+  addLine,
+  availableStock as availableStockOf,
+  cartSubtotal,
+  cartTotal,
+  changeQuantity,
+  isOutOfStock as isOutOfStockOf,
+  isValidMixedPayment,
+  promotionDiscount,
+} from '@/lib/pos';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -120,86 +130,53 @@ export function usePOS() {
   const categories = categoriesQuery.data || [];
   const promotions = promotionsQuery.data || [];
 
-  const availableStock = (product: POSProduct) => {
-    if (product.stock_qty === null) return null;
-    const inCart = cart.find((c) => c.id === product.id)?.qty ?? 0;
-    return product.stock_qty - inCart;
-  };
+  const availableStock = (product: POSProduct) =>
+    availableStockOf(product.stock_qty, cart, product.id);
 
-  const isOutOfStock = (product: POSProduct) =>
-    product.stock_qty !== null && product.stock_qty <= 0;
+  const isOutOfStock = (product: POSProduct) => isOutOfStockOf(product.stock_qty);
 
   const addToCart = (product: POSProduct) => {
-    if (isOutOfStock(product)) {
-      toast({ title: t('error'), description: `${product.name} غير متوفر في المخزون`, variant: 'destructive' });
+    const next = addLine(cart, product);
+    if (!next) {
+      toast({
+        title: t('error'),
+        description: isOutOfStock(product)
+          ? `${product.name} غير متوفر في المخزون`
+          : `الكمية المتوفرة من ${product.name} هي ${product.stock_qty} فقط`,
+        variant: 'destructive',
+      });
       return;
     }
-    const existing = cart.find((item) => item.id === product.id);
-    if (existing) {
-      if (product.stock_qty !== null && existing.qty >= product.stock_qty) {
-        toast({
-          title: t('error'),
-          description: `الكمية المتوفرة من ${product.name} هي ${product.stock_qty} فقط`,
-          variant: 'destructive',
-        });
-        return;
-      }
-      setCart(cart.map((item) => (item.id === product.id ? { ...item, qty: item.qty + 1 } : item)));
-    } else {
-      setCart([
-        ...cart,
-        {
-          id: product.id,
-          name: product.name,
-          price: product.sell_price_ils,
-          qty: 1,
-          stock: product.stock_qty,
-        },
-      ]);
-    }
+    setCart(next);
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart(
-      cart
-        .map((item) => {
-          if (item.id !== id) return item;
-          const newQty = item.qty + delta;
-          if (item.stock !== null && newQty > item.stock) {
-            toast({
-              title: t('error'),
-              description: `الكمية المتوفرة من ${item.name} هي ${item.stock} فقط`,
-              variant: 'destructive',
-            });
-            return item;
-          }
-          return { ...item, qty: newQty };
-        })
-        .filter((item) => item.qty > 0)
-    );
+    const item = cart.find((i) => i.id === id);
+    if (item && item.stock !== null && item.qty + delta > item.stock) {
+      toast({
+        title: t('error'),
+        description: `الكمية المتوفرة من ${item.name} هي ${item.stock} فقط`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setCart(changeQuantity(cart, id, delta));
   };
 
   const removeFromCart = (id: string) => setCart(cart.filter((item) => item.id !== id));
   const clearCart = () => setCart([]);
 
-  const subtotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-    [cart]
-  );
+  const subtotal = useMemo(() => cartSubtotal(cart), [cart]);
 
   const selectedPromotion = promotions.find((p) => p.id === promotionId) || null;
 
   // Display-only preview — the server recomputes the authoritative amounts.
-  const discount = useMemo(() => {
-    if (!selectedPromotion) return 0;
-    const raw =
-      selectedPromotion.discount_type === 'percentage'
-        ? (subtotal * Math.min(Math.max(selectedPromotion.discount_value, 0), 100)) / 100
-        : Math.max(selectedPromotion.discount_value, 0);
-    return Math.min(Math.round(raw * 100) / 100, subtotal);
-  }, [selectedPromotion, subtotal]);
+  const discount = useMemo(
+    () => promotionDiscount(selectedPromotion, subtotal),
+    [selectedPromotion, subtotal]
+  );
 
-  const total = Math.max(Math.round((subtotal - discount) * 100) / 100, 0);
+  const total = cartTotal(subtotal, discount);
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory = !selectedCategory || p.category_id === selectedCategory;
@@ -256,8 +233,7 @@ export function usePOS() {
     let payments: PaymentPart[];
     if (method === 'mixed') {
       payments = (parts || []).filter((p) => p.amount > 0);
-      const sum = Math.round(payments.reduce((s, p) => s + p.amount, 0) * 100) / 100;
-      if (sum !== total) {
+      if (!isValidMixedPayment(payments, total)) {
         toast({
           title: t('error'),
           description: 'مجموع الدفع المختلط يجب أن يساوي الإجمالي',
