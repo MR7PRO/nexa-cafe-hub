@@ -34,11 +34,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
-import { canRefundTicket } from '@/lib/permissions';
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { canRefundTicket } from '@/lib/permissions';
 
 interface TicketItem {
   id: string;

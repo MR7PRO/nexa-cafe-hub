@@ -29,13 +29,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-import { canManageDevices as canManageDevicesFor } from '@/lib/permissions';
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { canManageDevices as canManageDevicesFor } from '@/lib/permissions';
 
 export default function Devices() {
   const [dialogOpen, setDialogOpen] = useState(false);
