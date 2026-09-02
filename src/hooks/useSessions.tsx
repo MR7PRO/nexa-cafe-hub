@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { computeElapsedMinutes, type SessionTiming } from '@/lib/sessionTime';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/lib/i18n';
 
@@ -308,12 +309,5 @@ export function useSessionMutations() {
 /* ------------------------------------------------------------------ */
 
 export function getElapsedMinutes(session?: ActiveSession | null): number {
-  if (!session) return 0;
-  const startTime = new Date(session.start_time).getTime();
-  const now = Date.now();
-  let pausedMs = (session.paused_seconds || 0) * 1000;
-  if (session.status === 'paused' && session.pause_started_at) {
-    pausedMs += now - new Date(session.pause_started_at).getTime();
-  }
-  return Math.floor((now - startTime - pausedMs) / 60000);
+  return computeElapsedMinutes(session as SessionTiming | null | undefined);
 }

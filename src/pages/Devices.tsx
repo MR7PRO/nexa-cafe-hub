@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { canManageDevices as canManageDevicesFor } from '@/lib/permissions';
 
 export default function Devices() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -122,7 +123,7 @@ export default function Devices() {
     return d.type === filter;
   });
 
-  const canManageDevices = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canManageDevices = canManageDevicesFor(role);
 
   if (loading) {
     return (

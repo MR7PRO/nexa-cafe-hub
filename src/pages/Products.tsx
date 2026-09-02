@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { canManageCatalog } from '@/lib/permissions';
 
 interface Product {
   id: string;
@@ -67,7 +68,7 @@ export default function Products() {
   
   const { toast } = useToast();
   const { role } = useAuth();
-  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canManage = canManageCatalog(role);
 
   useEffect(() => {
     fetchData();

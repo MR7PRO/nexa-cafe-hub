@@ -38,6 +38,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { canRefundTicket } from '@/lib/permissions';
 
 interface TicketItem {
   id: string;
@@ -88,7 +89,7 @@ export default function Tickets() {
   
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const canRefund = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canRefund = canRefundTicket(role);
 
   useEffect(() => {
     fetchTickets();
