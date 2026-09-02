@@ -237,6 +237,9 @@ export type Database = {
           note: string | null
           tenant_id: string | null
           title: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           amount_ils: number
@@ -246,6 +249,9 @@ export type Database = {
           note?: string | null
           tenant_id?: string | null
           title: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           amount_ils?: number
@@ -255,6 +261,9 @@ export type Database = {
           note?: string | null
           tenant_id?: string | null
           title?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -995,10 +1004,15 @@ export type Database = {
           customer_id: string | null
           discount_ils: number
           id: string
+          refund_amount_ils: number | null
           status: Database["public"]["Enums"]["ticket_status"]
           tenant_id: string | null
           ticket_no: string
           total_ils: number
+          void_reason: string | null
+          void_type: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           closed_at?: string | null
@@ -1007,10 +1021,15 @@ export type Database = {
           customer_id?: string | null
           discount_ils?: number
           id?: string
+          refund_amount_ils?: number | null
           status?: Database["public"]["Enums"]["ticket_status"]
           tenant_id?: string | null
           ticket_no: string
           total_ils?: number
+          void_reason?: string | null
+          void_type?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           closed_at?: string | null
@@ -1019,10 +1038,15 @@ export type Database = {
           customer_id?: string | null
           discount_ils?: number
           id?: string
+          refund_amount_ils?: number | null
           status?: Database["public"]["Enums"]["ticket_status"]
           tenant_id?: string | null
           ticket_no?: string
           total_ils?: number
+          void_reason?: string | null
+          void_type?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -1079,6 +1103,18 @@ export type Database = {
         Args: { p_name: string; p_phone?: string }
         Returns: string
       }
+      get_audit_events: {
+        Args: {
+          p_action?: string
+          p_actor?: string
+          p_end?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_start?: string
+        }
+        Returns: Json
+      }
       get_report_metrics: {
         Args: { p_bucket?: string; p_end: string; p_start: string }
         Returns: Json
@@ -1096,6 +1132,17 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _actor?: string
+          _entity: string
+          _entity_id: string
+          _metadata?: Json
+          _tenant?: string
+        }
+        Returns: undefined
+      }
       next_ticket_no: { Args: { _tenant: string }; Returns: string }
       pause_session: { Args: { p_session_id: string }; Returns: undefined }
       process_sale:
@@ -1161,6 +1208,19 @@ export type Database = {
       }
       validate_payment_parts: {
         Args: { _payments: Json; _total: number }
+        Returns: Json
+      }
+      void_expense: {
+        Args: { p_expense_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_ticket: {
+        Args: {
+          p_mode?: string
+          p_reason: string
+          p_refund_amount_ils?: number
+          p_ticket_id: string
+        }
         Returns: Json
       }
     }
