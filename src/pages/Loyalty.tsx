@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { StatCard } from '@/components/ui/stat-card';
+import { canManageCatalog } from '@/lib/permissions';
 
 interface Customer {
   id: string;
@@ -88,7 +89,7 @@ export default function Loyalty() {
 
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canManage = canManageCatalog(role);
 
   useEffect(() => {
     fetchData();

@@ -29,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+import { canManageDevices as canManageDevicesFor } from '@/lib/permissions';
   Select,
   SelectContent,
   SelectItem,
@@ -122,7 +123,7 @@ export default function Devices() {
     return d.type === filter;
   });
 
-  const canManageDevices = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canManageDevices = canManageDevicesFor(role);
 
   if (loading) {
     return (

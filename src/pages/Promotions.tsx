@@ -30,6 +30,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Plus, Edit, Percent, Tag, CalendarDays, Sparkles } from 'lucide-react';
+import { canManageCatalog } from '@/lib/permissions';
 
 interface Promotion {
   id: string;
@@ -63,7 +64,7 @@ export default function Promotions() {
     end_date: '',
   });
 
-  const canManage = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canManage = canManageCatalog(role);
 
   useEffect(() => {
     fetchPromotions();

@@ -34,6 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
+import { canRefundTicket } from '@/lib/permissions';
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
@@ -88,7 +89,7 @@ export default function Tickets() {
   
   const { toast } = useToast();
   const { user, role } = useAuth();
-  const canRefund = role === 'admin' || role === 'manager' || role === 'super_admin';
+  const canRefund = canRefundTicket(role);
 
   useEffect(() => {
     fetchTickets();
