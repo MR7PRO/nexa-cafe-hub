@@ -82,7 +82,10 @@ export default function Tickets() {
   const [refundTicket, setRefundTicket] = useState<Ticket | null>(null);
   const [refundReason, setRefundReason] = useState('');
   const [refundPin, setRefundPin] = useState('');
+  const [refundMode, setRefundMode] = useState<'refund' | 'void'>('refund');
+  const [refundAmount, setRefundAmount] = useState('');
   const [refundProcessing, setRefundProcessing] = useState(false);
+
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
