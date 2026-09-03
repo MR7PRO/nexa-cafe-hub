@@ -75,6 +75,9 @@ export default function Reports() {
   const cogs = m?.product_cogs ?? 0;
   const grossProductProfit = m?.product_gross_profit ?? 0;
   const expenses = m?.operating_expenses ?? 0;
+  const voidedTickets = m?.voided_tickets ?? 0;
+  const voidedAmount = m?.voided_amount_ils ?? 0;
+  const refundedAmount = m?.refunded_amount_ils ?? 0;
   // Operating result = revenue - product cost of goods - operating expenses
   const operatingResult = Math.round((totalRevenue - cogs - expenses) * 100) / 100;
   const margin = totalRevenue > 0 ? (operatingResult / totalRevenue) * 100 : 0;
@@ -304,6 +307,13 @@ export default function Reports() {
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-sm text-muted-foreground">متوسط مدة الجلسة</p>
           <p className="mt-1 text-xl font-bold text-foreground">{Math.round(m?.avg_session_minutes ?? 0)} د</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">فواتير ملغاة / مستردة</p>
+          <p className="mt-1 text-xl font-bold text-destructive">{voidedTickets}</p>
+          <p className="text-xs text-muted-foreground ils-amount">
+            {formatILS(voidedAmount)} • استرداد {formatILS(refundedAmount)}
+          </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-sm text-muted-foreground">منتجات منخفضة المخزون</p>

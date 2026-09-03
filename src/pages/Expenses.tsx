@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wallet, Plus, TrendingUp, TrendingDown, DollarSign, Calendar, FileText } from 'lucide-react';
+import { Wallet, Plus, TrendingUp, TrendingDown, DollarSign, Calendar, FileText, Ban } from 'lucide-react';
 import { t, formatILS } from '@/lib/i18n';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { StatCard } from '@/components/ui/stat-card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { canVoidExpense } from '@/lib/permissions';
+import { Badge } from '@/components/ui/badge';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -26,6 +28,8 @@ interface Expense {
   created_at: string;
   created_by: string | null;
   creator_name?: string;
+  voided_at?: string | null;
+  void_reason?: string | null;
 }
 
 interface ProfitStats {
@@ -36,7 +40,11 @@ interface ProfitStats {
 }
 
 export default function Expenses() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const canVoid = canVoidExpense(role);
+  const [voidTarget, setVoidTarget] = useState<Expense | null>(null);
+  const [voidReason, setVoidReason] = useState('');
+  const [voiding, setVoiding] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<ProfitStats>({
     grossRevenue: 0,
@@ -115,6 +123,7 @@ export default function Expenses() {
       const { data: monthlyExpenses } = await supabase
         .from('expenses')
         .select('amount_ils')
+        .is('voided_at', null)
         .gte('created_at', monthStart)
         .lte('created_at', monthEnd);
 
@@ -124,6 +133,7 @@ export default function Expenses() {
       const { data: todayExpensesData } = await supabase
         .from('expenses')
         .select('amount_ils')
+        .is('voided_at', null)
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd);
 
@@ -174,6 +184,26 @@ export default function Expenses() {
       toast.error(t('error'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleVoidExpense = async () => {
+    if (!voidTarget || !voidReason.trim()) return;
+    setVoiding(true);
+    try {
+      const { error } = await supabase.rpc('void_expense', {
+        p_expense_id: voidTarget.id,
+        p_reason: voidReason.trim(),
+      });
+      if (error) throw error;
+      toast.success('تم إلغاء المصروف وتسجيله في سجل الحركات');
+      setVoidTarget(null);
+      setVoidReason('');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || t('error'));
+    } finally {
+      setVoiding(false);
     }
   };
 
@@ -351,12 +381,13 @@ export default function Expenses() {
                     <TableHead>{t('expenseNote')}</TableHead>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>بواسطة</TableHead>
+                    <TableHead className="text-left">الحالة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {expenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                      <TableCell className="font-medium">{expense.title}</TableCell>
+                    <TableRow key={expense.id} className={cn(expense.voided_at && 'opacity-60')}>
+                      <TableCell className={cn('font-medium', expense.voided_at && 'line-through')}>{expense.title}</TableCell>
                       <TableCell className="text-destructive font-mono">
                         -{formatILS(expense.amount_ils)}
                       </TableCell>
@@ -383,6 +414,25 @@ export default function Expenses() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-left">
+                        {expense.voided_at ? (
+                          <Badge variant="outline" className="border-destructive/30 text-destructive" title={expense.void_reason || undefined}>
+                            ملغى
+                          </Badge>
+                        ) : canVoid ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-destructive hover:text-destructive"
+                            onClick={() => { setVoidTarget(expense); setVoidReason(''); }}
+                          >
+                            <Ban className="h-4 w-4" />
+                            إلغاء
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -391,6 +441,39 @@ export default function Expenses() {
           )}
         </CardContent>
       </Card>
+
+      {/* Void Expense Dialog */}
+      <Dialog open={!!voidTarget} onOpenChange={(open) => !open && setVoidTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Ban className="h-5 w-5" />
+              إلغاء مصروف
+            </DialogTitle>
+          </DialogHeader>
+          {voidTarget && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg bg-destructive/10 p-4">
+                <p className="font-medium">{voidTarget.title}</p>
+                <p className="text-lg font-bold text-destructive">{formatILS(voidTarget.amount_ils)}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>سبب الإلغاء *</Label>
+                <Textarea value={voidReason} onChange={(e) => setVoidReason(e.target.value)} rows={3} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                لا يتم حذف المصروف — يبقى محفوظاً مع سبب الإلغاء واسم المسؤول في سجل الحركات.
+              </p>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setVoidTarget(null)}>إلغاء</Button>
+            <Button variant="destructive" disabled={voiding || !voidReason.trim()} onClick={handleVoidExpense}>
+              {voiding ? 'جاري المعالجة...' : 'تأكيد الإلغاء'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Expense Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
