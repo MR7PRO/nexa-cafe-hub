@@ -323,7 +323,10 @@ export default function Tickets() {
     setRefundTicket(ticket);
     setRefundReason('');
     setRefundPin('');
+    setRefundMode('refund');
+    setRefundAmount(String(ticket.total_ils));
     setRefundOpen(true);
+
   };
 
   const processRefund = async () => {
