@@ -128,6 +128,7 @@ export function MobileNav() {
             <div className="flex-1 overflow-y-auto p-3 space-y-1">
               {navItems.map((item) => {
                 if ((item as any).adminOnly && role !== 'admin' && role !== 'super_admin') return null;
+                if ((item as any).managerOnly && role !== 'admin' && role !== 'manager' && role !== 'super_admin') return null;
                 if ((item as any).superAdminOnly && role !== 'super_admin') return null;
 
                 const isActive = location.pathname === item.href;
