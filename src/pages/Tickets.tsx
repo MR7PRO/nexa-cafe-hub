@@ -671,9 +671,39 @@ export default function Tickets() {
                 </p>
               </div>
 
+              {/* Correction type */}
+              <div className="space-y-2">
+                <Label>نوع التصحيح *</Label>
+                <Select value={refundMode} onValueChange={(v) => setRefundMode(v as 'refund' | 'void')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="refund">استرداد مبلغ للعميل</SelectItem>
+                    <SelectItem value="void">إلغاء بدون استرداد</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {refundMode === 'refund' && (
+                <div className="space-y-2">
+                  <Label>مبلغ الاسترداد (₪) *</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={refundTicket.total_ils}
+                    step="0.5"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    الحد الأعلى {formatILS(refundTicket.total_ils)} — تبقى الفاتورة الأصلية محفوظة في السجل
+                  </p>
+                </div>
+              )}
+
               {/* Reason */}
               <div className="space-y-2">
-                <Label>سبب الاسترداد *</Label>
+                <Label>السبب *</Label>
                 <Textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
@@ -681,6 +711,8 @@ export default function Tickets() {
                   rows={3}
                 />
               </div>
+
+
 
               {/* PIN */}
               <div className="space-y-2">
