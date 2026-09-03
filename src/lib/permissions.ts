@@ -50,3 +50,19 @@ export function canGrantRole(
 export function isSuperAdmin(role: AppRole | null | undefined): boolean {
   return role === 'super_admin';
 }
+
+/** Viewing the financial activity / audit trail. */
+export function canViewAudit(role: AppRole | null | undefined): boolean {
+  return hasAny(role, MANAGEMENT_ROLES);
+}
+
+/** Voiding a ticket (with or without refund). Mirrors void_ticket() server checks. */
+export function canVoidTicket(role: AppRole | null | undefined): boolean {
+  return hasAny(role, MANAGEMENT_ROLES);
+}
+
+/** Voiding an expense. Mirrors void_expense() server checks. */
+export function canVoidExpense(role: AppRole | null | undefined): boolean {
+  return hasAny(role, MANAGEMENT_ROLES);
+}
+

@@ -14,7 +14,8 @@ import {
   Heart,
   Sparkles,
   AlertTriangle,
-  Shield
+  Shield,
+  ScrollText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -25,7 +26,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useLowStockProducts } from '@/hooks/useLowStockProducts';
 import logo from '@/assets/logo.png';
 
-const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean; superAdminOnly?: boolean }> = [
+const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; labelAr?: string; adminOnly?: boolean; managerOnly?: boolean; superAdminOnly?: boolean }> = [
   { href: '/', icon: LayoutDashboard, label: 'dashboard' },
   { href: '/devices', icon: Monitor, label: 'devices' },
   { href: '/pos', icon: ShoppingCart, label: 'pos' },
@@ -37,6 +38,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/shifts', icon: Clock, label: 'shifts' },
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
+  { href: '/activity', icon: ScrollText, label: 'activity', labelAr: 'سجل الحركات', managerOnly: true },
   { href: '/settings', icon: Settings, label: 'settings', adminOnly: true },
   { href: '/super-admin', icon: Shield, label: 'إدارة النظام', labelAr: 'إدارة النظام', superAdminOnly: true },
 ];
@@ -84,6 +86,7 @@ export function Sidebar() {
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => {
             if (item.adminOnly && role !== 'admin' && role !== 'super_admin') return null;
+            if (item.managerOnly && role !== 'admin' && role !== 'manager' && role !== 'super_admin') return null;
             if (item.superAdminOnly && role !== 'super_admin') return null;
             
             const isActive = location.pathname === item.href;

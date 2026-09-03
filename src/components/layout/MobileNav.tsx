@@ -13,6 +13,7 @@ import {
   Heart,
   Sparkles,
   Shield,
+  ScrollText,
   Menu,
   X,
   User,
@@ -38,6 +39,7 @@ const navItems = [
   { href: '/shifts', icon: Clock, label: 'shifts' },
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
+  { href: '/activity', icon: ScrollText, label: 'activity', labelAr: 'سجل الحركات', managerOnly: true },
   { href: '/settings', icon: Settings, label: 'settings', adminOnly: true },
   { href: '/super-admin', icon: Shield, label: 'إدارة النظام', labelAr: 'إدارة النظام', superAdminOnly: true },
 ];
@@ -126,6 +128,7 @@ export function MobileNav() {
             <div className="flex-1 overflow-y-auto p-3 space-y-1">
               {navItems.map((item) => {
                 if ((item as any).adminOnly && role !== 'admin' && role !== 'super_admin') return null;
+                if ((item as any).managerOnly && role !== 'admin' && role !== 'manager' && role !== 'super_admin') return null;
                 if ((item as any).superAdminOnly && role !== 'super_admin') return null;
 
                 const isActive = location.pathname === item.href;

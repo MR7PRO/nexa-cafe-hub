@@ -82,7 +82,10 @@ export default function Tickets() {
   const [refundTicket, setRefundTicket] = useState<Ticket | null>(null);
   const [refundReason, setRefundReason] = useState('');
   const [refundPin, setRefundPin] = useState('');
+  const [refundMode, setRefundMode] = useState<'refund' | 'void'>('refund');
+  const [refundAmount, setRefundAmount] = useState('');
   const [refundProcessing, setRefundProcessing] = useState(false);
+
   
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
@@ -320,52 +323,51 @@ export default function Tickets() {
     setRefundTicket(ticket);
     setRefundReason('');
     setRefundPin('');
+    setRefundMode('refund');
+    setRefundAmount(String(ticket.total_ils));
     setRefundOpen(true);
+
   };
 
   const processRefund = async () => {
     if (!refundTicket) return;
-    
-    // Validate PIN (simple validation - in production use proper hash comparison)
+
     if (refundPin.length !== 4) {
       toast({ title: t('error'), description: 'يرجى إدخال رمز PIN صحيح', variant: 'destructive' });
       return;
     }
-    
+
     if (!refundReason.trim()) {
       toast({ title: t('error'), description: 'يرجى إدخال سبب الاسترداد', variant: 'destructive' });
       return;
     }
-    
+
+    const amount = refundMode === 'refund'
+      ? Math.min(Math.max(parseFloat(refundAmount) || 0, 0), refundTicket.total_ils)
+      : 0;
+
+    if (refundMode === 'refund' && amount <= 0) {
+      toast({ title: t('error'), description: 'أدخل مبلغ استرداد صحيح', variant: 'destructive' });
+      return;
+    }
+
     setRefundProcessing(true);
 
     try {
-      // Update ticket status to void
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .update({ status: 'void' })
-        .eq('id', refundTicket.id);
-
-      if (ticketError) throw ticketError;
-
-      // Create audit log
-      const { error: auditError } = await supabase.from('audit_logs').insert({
-        user_id: user?.id,
-        action: 'refund',
-        entity: 'tickets',
-        entity_id: refundTicket.id,
-        details_json: {
-          ticket_no: refundTicket.ticket_no,
-          amount: refundTicket.total_ils,
-          reason: refundReason,
-        },
+      // Server-side, atomic: preserves the original ticket, restores stock,
+      // records the reason/actor and writes the audit event.
+      const { error } = await supabase.rpc('void_ticket', {
+        p_ticket_id: refundTicket.id,
+        p_reason: refundReason.trim(),
+        p_mode: refundMode,
+        p_refund_amount_ils: refundMode === 'refund' ? amount : 0,
       });
 
-      if (auditError) console.error('Audit log error:', auditError);
+      if (error) throw error;
 
       toast({
-        title: 'تم الاسترداد',
-        description: `تم استرداد الفاتورة ${refundTicket.ticket_no}`,
+        title: refundMode === 'refund' ? 'تم الاسترداد' : 'تم الإلغاء',
+        description: `الفاتورة ${refundTicket.ticket_no}`,
       });
 
       setRefundOpen(false);
@@ -381,6 +383,7 @@ export default function Tickets() {
 
     setRefundProcessing(false);
   };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -668,9 +671,39 @@ export default function Tickets() {
                 </p>
               </div>
 
+              {/* Correction type */}
+              <div className="space-y-2">
+                <Label>نوع التصحيح *</Label>
+                <Select value={refundMode} onValueChange={(v) => setRefundMode(v as 'refund' | 'void')}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="refund">استرداد مبلغ للعميل</SelectItem>
+                    <SelectItem value="void">إلغاء بدون استرداد</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {refundMode === 'refund' && (
+                <div className="space-y-2">
+                  <Label>مبلغ الاسترداد (₪) *</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={refundTicket.total_ils}
+                    step="0.5"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    الحد الأعلى {formatILS(refundTicket.total_ils)} — تبقى الفاتورة الأصلية محفوظة في السجل
+                  </p>
+                </div>
+              )}
+
               {/* Reason */}
               <div className="space-y-2">
-                <Label>سبب الاسترداد *</Label>
+                <Label>السبب *</Label>
                 <Textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
@@ -678,6 +711,8 @@ export default function Tickets() {
                   rows={3}
                 />
               </div>
+
+
 
               {/* PIN */}
               <div className="space-y-2">

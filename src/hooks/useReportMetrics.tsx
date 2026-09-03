@@ -35,6 +35,9 @@ export interface ReportMetrics {
   product_cogs: number;
   product_gross_profit: number;
   operating_expenses: number;
+  voided_tickets: number;
+  voided_amount_ils: number;
+  refunded_amount_ils: number;
   revenue_series: Array<{ bucket: string; sessions: number; products: number; total: number }>;
   sessions_count: number;
   avg_session_minutes: number;

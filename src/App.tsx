@@ -29,6 +29,7 @@ const Loyalty = lazy(() => import("./pages/Loyalty"));
 const Promotions = lazy(() => import("./pages/Promotions"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Activity = lazy(() => import("./pages/Activity"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ function AppRoutes() {
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+        <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/super-admin" element={<ProtectedRoute><SuperAdmin /></ProtectedRoute>} />
