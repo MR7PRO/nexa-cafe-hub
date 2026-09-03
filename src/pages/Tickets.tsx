@@ -325,47 +325,43 @@ export default function Tickets() {
 
   const processRefund = async () => {
     if (!refundTicket) return;
-    
-    // Validate PIN (simple validation - in production use proper hash comparison)
+
     if (refundPin.length !== 4) {
       toast({ title: t('error'), description: 'يرجى إدخال رمز PIN صحيح', variant: 'destructive' });
       return;
     }
-    
+
     if (!refundReason.trim()) {
       toast({ title: t('error'), description: 'يرجى إدخال سبب الاسترداد', variant: 'destructive' });
       return;
     }
-    
+
+    const amount = refundMode === 'refund'
+      ? Math.min(Math.max(parseFloat(refundAmount) || 0, 0), refundTicket.total_ils)
+      : 0;
+
+    if (refundMode === 'refund' && amount <= 0) {
+      toast({ title: t('error'), description: 'أدخل مبلغ استرداد صحيح', variant: 'destructive' });
+      return;
+    }
+
     setRefundProcessing(true);
 
     try {
-      // Update ticket status to void
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .update({ status: 'void' })
-        .eq('id', refundTicket.id);
-
-      if (ticketError) throw ticketError;
-
-      // Create audit log
-      const { error: auditError } = await supabase.from('audit_logs').insert({
-        user_id: user?.id,
-        action: 'refund',
-        entity: 'tickets',
-        entity_id: refundTicket.id,
-        details_json: {
-          ticket_no: refundTicket.ticket_no,
-          amount: refundTicket.total_ils,
-          reason: refundReason,
-        },
+      // Server-side, atomic: preserves the original ticket, restores stock,
+      // records the reason/actor and writes the audit event.
+      const { error } = await supabase.rpc('void_ticket', {
+        p_ticket_id: refundTicket.id,
+        p_reason: refundReason.trim(),
+        p_mode: refundMode,
+        p_refund_amount_ils: refundMode === 'refund' ? amount : 0,
       });
 
-      if (auditError) console.error('Audit log error:', auditError);
+      if (error) throw error;
 
       toast({
-        title: 'تم الاسترداد',
-        description: `تم استرداد الفاتورة ${refundTicket.ticket_no}`,
+        title: refundMode === 'refund' ? 'تم الاسترداد' : 'تم الإلغاء',
+        description: `الفاتورة ${refundTicket.ticket_no}`,
       });
 
       setRefundOpen(false);
@@ -381,6 +377,7 @@ export default function Tickets() {
 
     setRefundProcessing(false);
   };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
