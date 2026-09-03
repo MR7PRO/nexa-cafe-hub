@@ -13,6 +13,7 @@ import {
   Heart,
   Sparkles,
   Shield,
+  ScrollText,
   Menu,
   X,
   User,
@@ -38,6 +39,7 @@ const navItems = [
   { href: '/shifts', icon: Clock, label: 'shifts' },
   { href: '/expenses', icon: Wallet, label: 'expenses' },
   { href: '/reports', icon: BarChart3, label: 'reports' },
+  { href: '/activity', icon: ScrollText, label: 'activity', labelAr: 'سجل الحركات', managerOnly: true },
   { href: '/settings', icon: Settings, label: 'settings', adminOnly: true },
   { href: '/super-admin', icon: Shield, label: 'إدارة النظام', labelAr: 'إدارة النظام', superAdminOnly: true },
 ];
