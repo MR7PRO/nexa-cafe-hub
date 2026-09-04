@@ -5,6 +5,9 @@ import {
   canManageDevices,
   canManageUsers,
   canRefundTicket,
+  canViewAudit,
+  canVoidExpense,
+  canVoidTicket,
   isSuperAdmin,
   type AppRole,
 } from './permissions';
@@ -58,4 +61,17 @@ describe('permissions', () => {
     expect(isSuperAdmin('admin')).toBe(false);
     expect(isSuperAdmin(null)).toBe(false);
   });
+
+  it('gates audit trail and corrections to management roles', () => {
+    for (const role of ['admin', 'manager', 'super_admin'] as AppRole[]) {
+      expect(canViewAudit(role)).toBe(true);
+      expect(canVoidTicket(role)).toBe(true);
+      expect(canVoidExpense(role)).toBe(true);
+    }
+    for (const check of [canViewAudit, canVoidTicket, canVoidExpense]) {
+      expect(check('cashier')).toBe(false);
+      expect(check(null)).toBe(false);
+    }
+  });
 });
+
