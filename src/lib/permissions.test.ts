@@ -5,6 +5,9 @@ import {
   canManageDevices,
   canManageUsers,
   canRefundTicket,
+  canViewAudit,
+  canVoidExpense,
+  canVoidTicket,
   isSuperAdmin,
   type AppRole,
 } from './permissions';
