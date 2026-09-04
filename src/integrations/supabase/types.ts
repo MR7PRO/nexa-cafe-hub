@@ -275,6 +275,72 @@ export type Database = {
           },
         ]
       }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          id: string
+          movement_type: string
+          performed_by: string | null
+          product_id: string
+          quantity_after: number | null
+          quantity_before: number | null
+          quantity_change: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          supplier: string | null
+          tenant_id: string | null
+          unit_cost_ils: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          movement_type: string
+          performed_by?: string | null
+          product_id: string
+          quantity_after?: number | null
+          quantity_before?: number | null
+          quantity_change: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          supplier?: string | null
+          tenant_id?: string | null
+          unit_cost_ils?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          movement_type?: string
+          performed_by?: string | null
+          product_id?: string
+          quantity_after?: number | null
+          quantity_before?: number | null
+          quantity_change?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          supplier?: string | null
+          tenant_id?: string | null
+          unit_cost_ils?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           code: string
@@ -407,6 +473,7 @@ export type Database = {
       }
       products: {
         Row: {
+          barcode: string | null
           category_id: string | null
           cost_price_ils: number | null
           created_at: string
@@ -415,10 +482,12 @@ export type Database = {
           low_stock_threshold: number | null
           name: string
           sell_price_ils: number
+          sku: string | null
           stock_qty: number | null
           tenant_id: string | null
         }
         Insert: {
+          barcode?: string | null
           category_id?: string | null
           cost_price_ils?: number | null
           created_at?: string
@@ -427,10 +496,12 @@ export type Database = {
           low_stock_threshold?: number | null
           name: string
           sell_price_ils: number
+          sku?: string | null
           stock_qty?: number | null
           tenant_id?: string | null
         }
         Update: {
+          barcode?: string | null
           category_id?: string | null
           cost_price_ils?: number | null
           created_at?: string
@@ -439,6 +510,7 @@ export type Database = {
           low_stock_threshold?: number | null
           name?: string
           sell_price_ils?: number
+          sku?: string | null
           stock_qty?: number | null
           tenant_id?: string | null
         }
@@ -1088,6 +1160,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_stock: {
+        Args: {
+          p_movement_type: string
+          p_product_id: string
+          p_quantity_change: number
+          p_reason: string
+        }
+        Returns: Json
+      }
       compute_promotion_discount: {
         Args: {
           _promotion_id: string
@@ -1113,6 +1194,10 @@ export type Database = {
           p_search?: string
           p_start?: string
         }
+        Returns: Json
+      }
+      get_inventory_movements: {
+        Args: { p_limit?: number; p_offset?: number; p_product_id: string }
         Returns: Json
       }
       get_report_metrics: {
@@ -1165,6 +1250,16 @@ export type Database = {
             }
             Returns: Json
           }
+      restock_product: {
+        Args: {
+          p_note?: string
+          p_product_id: string
+          p_quantity: number
+          p_supplier?: string
+          p_unit_cost_ils?: number
+        }
+        Returns: Json
+      }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
       settle_session: {
         Args: {
