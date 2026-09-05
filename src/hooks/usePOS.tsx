@@ -24,6 +24,8 @@ export interface POSProduct {
   sell_price_ils: number;
   category_id: string | null;
   stock_qty: number | null;
+  sku?: string | null;
+  barcode?: string | null;
   category?: { name: string } | null;
 }
 
@@ -72,7 +74,7 @@ function useProductsQuery() {
     queryFn: async (): Promise<POSProduct[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, sell_price_ils, category_id, stock_qty, categories(name)')
+        .select('id, name, sell_price_ils, category_id, stock_qty, sku, barcode, categories(name)')
         .eq('is_active', true)
         .order('name');
       if (error) throw error;
@@ -180,9 +182,54 @@ export function usePOS() {
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory = !selectedCategory || p.category_id === selectedCategory;
-    const matchesSearch = !searchQuery || p.name.includes(searchQuery);
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.barcode || '').toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
+
+  /* ------------------------- barcode scanning ----------------------- */
+
+  /**
+   * Called when the search input receives Enter (USB/Bluetooth scanners act as
+   * a keyboard). Exact barcode/SKU match adds one unit and clears the input so
+   * the next scan is ready. Falls back to a single search hit.
+   */
+  const submitScan = (raw: string): boolean => {
+    const code = raw.trim();
+    if (!code) return false;
+    const lower = code.toLowerCase();
+    let match = products.find((p) => (p.barcode || '').toLowerCase() === lower);
+    if (!match) match = products.find((p) => (p.sku || '').toLowerCase() === lower);
+    if (!match) {
+      const hits = products.filter((p) => p.name.toLowerCase().includes(lower));
+      if (hits.length === 1) match = hits[0];
+    }
+    if (!match) {
+      toast({
+        title: t('error'),
+        description: `لا يوجد منتج بالرمز ${code}`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+    const next = addLine(cart, match);
+    if (!next) {
+      toast({
+        title: t('error'),
+        description: `${match.name} غير متوفر بالكمية المطلوبة`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+    setCart(next);
+    setSearchQuery('');
+    toast({ title: 'تمت الإضافة', description: match.name });
+    return true;
+  };
 
   /* --------------------------- checkout ---------------------------- */
 
@@ -272,6 +319,7 @@ export function usePOS() {
     clearCart,
     availableStock,
     isOutOfStock,
+    submitScan,
     // money
     subtotal,
     discount,

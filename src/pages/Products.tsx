@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Package, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Package, Edit2, Trash2, PackagePlus, SlidersHorizontal, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { canManageCatalog } from '@/lib/permissions';
+import { RestockDialog } from '@/components/products/RestockDialog';
+import { StockAdjustDialog } from '@/components/products/StockAdjustDialog';
+import { InventoryHistoryDialog } from '@/components/products/InventoryHistoryDialog';
 
 interface Product {
   id: string;
@@ -42,6 +45,8 @@ interface Product {
   low_stock_threshold: number;
   is_active: boolean;
   category_id: string | null;
+  sku: string | null;
+  barcode: string | null;
   categories?: { name: string } | null;
 }
 
@@ -56,6 +61,9 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [restockProduct, setRestockProduct] = useState<Product | null>(null);
+  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
   
   const [form, setForm] = useState({
     name: '',
@@ -64,6 +72,8 @@ export default function Products() {
     stock_qty: '',
     low_stock_threshold: '5',
     category_id: '',
+    sku: '',
+    barcode: '',
   });
   
   const { toast } = useToast();
@@ -98,6 +108,8 @@ export default function Products() {
       stock_qty: parseInt(form.stock_qty) || 0,
       low_stock_threshold: parseInt(form.low_stock_threshold) || 5,
       category_id: form.category_id || null,
+      sku: form.sku.trim() || null,
+      barcode: form.barcode.trim() || null,
     };
 
     if (editingProduct) {
@@ -131,6 +143,8 @@ export default function Products() {
       stock_qty: '',
       low_stock_threshold: '5',
       category_id: '',
+      sku: '',
+      barcode: '',
     });
   };
 
@@ -143,6 +157,8 @@ export default function Products() {
       stock_qty: product.stock_qty.toString(),
       low_stock_threshold: product.low_stock_threshold.toString(),
       category_id: product.category_id || '',
+      sku: product.sku || '',
+      barcode: product.barcode || '',
     });
     setDialogOpen(true);
   };
@@ -262,6 +278,26 @@ export default function Products() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>رمز المنتج (SKU)</Label>
+                    <Input
+                      value={form.sku}
+                      onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                      placeholder="اختياري"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الباركود</Label>
+                    <Input
+                      value={form.barcode}
+                      onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                      placeholder="امسح الباركود هنا"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
                 <Button onClick={handleSubmit} className="w-full">
                   {editingProduct ? 'حفظ التغييرات' : 'إضافة المنتج'}
                 </Button>
@@ -296,7 +332,14 @@ export default function Products() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                         <Package className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <span className="font-medium">{product.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{product.name}</span>
+                        {(product.sku || product.barcode) && (
+                          <span className="font-mono text-xs text-muted-foreground" dir="ltr">
+                            {product.sku || product.barcode}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{product.categories?.name || '-'}</TableCell>
@@ -336,6 +379,30 @@ export default function Products() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`توريد ${product.name}`}
+                          onClick={() => setRestockProduct(product)}
+                        >
+                          <PackagePlus className="h-4 w-4 text-success" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`تعديل مخزون ${product.name}`}
+                          onClick={() => setAdjustProduct(product)}
+                        >
+                          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`سجل حركة ${product.name}`}
+                          onClick={() => setHistoryProduct(product)}
+                        >
+                          <History className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           aria-label={product.is_active ? `تعطيل المنتج ${product.name}` : `تنشيط المنتج ${product.name}`}
                           onClick={() => toggleActive(product)}
                         >
@@ -350,6 +417,28 @@ export default function Products() {
           </TableBody>
         </Table>
       </div>
+
+      {canManage && (
+        <>
+          <RestockDialog
+            product={restockProduct}
+            open={!!restockProduct}
+            onOpenChange={(o) => !o && setRestockProduct(null)}
+            onDone={fetchData}
+          />
+          <StockAdjustDialog
+            product={adjustProduct}
+            open={!!adjustProduct}
+            onOpenChange={(o) => !o && setAdjustProduct(null)}
+            onDone={fetchData}
+          />
+        </>
+      )}
+      <InventoryHistoryDialog
+        product={historyProduct}
+        open={!!historyProduct}
+        onOpenChange={(o) => !o && setHistoryProduct(null)}
+      />
     </div>
   );
 }
