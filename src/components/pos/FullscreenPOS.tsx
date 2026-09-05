@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Plus, Minus, Trash2, Receipt, Minimize2 } from 'lucide-react';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
 import { usePOS } from '@/hooks/usePOS';
@@ -12,6 +13,7 @@ interface FullscreenPOSProps {
 
 export function FullscreenPOS({ onClose }: FullscreenPOSProps) {
   const pos = usePOS();
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.documentElement.requestFullscreen?.().catch(() => {});
@@ -38,6 +40,22 @@ export function FullscreenPOS({ onClose }: FullscreenPOSProps) {
             <Minimize2 className="h-6 w-6" />
           </Button>
         </div>
+
+        {/* Search / barcode */}
+        <Input
+          ref={searchRef}
+          placeholder="ابحث أو امسح الباركود"
+          value={pos.searchQuery}
+          onChange={(e) => pos.setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              pos.submitScan(pos.searchQuery);
+              searchRef.current?.focus();
+            }
+          }}
+          className="mb-4 h-14 max-w-xl text-lg"
+        />
 
         {/* Categories */}
         <div className="flex gap-3 overflow-x-auto pb-4 mb-4">

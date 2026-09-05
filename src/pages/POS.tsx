@@ -1,5 +1,5 @@
 import { Plus, Minus, Trash2, Receipt, Maximize2 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { t, formatILS } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { usePOS } from '@/hooks/usePOS';
 
 export default function POS() {
   const [fullscreenMode, setFullscreenMode] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const pos = usePOS();
 
   if (fullscreenMode) {
@@ -41,9 +42,17 @@ export default function POS() {
 
         {/* Search */}
         <Input
-          placeholder={t('searchProducts')}
+          ref={searchRef}
+          placeholder="ابحث أو امسح الباركود"
           value={pos.searchQuery}
           onChange={(e) => pos.setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              pos.submitScan(pos.searchQuery);
+              searchRef.current?.focus();
+            }
+          }}
           className="max-w-md"
         />
 
