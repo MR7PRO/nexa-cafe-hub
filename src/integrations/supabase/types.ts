@@ -180,6 +180,69 @@ export type Database = {
           },
         ]
       }
+      device_maintenance: {
+        Row: {
+          created_at: string
+          description: string | null
+          device_id: string
+          id: string
+          issue_type: string
+          opened_at: string
+          opened_by: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          device_id: string
+          id?: string
+          issue_type?: string
+          opened_at?: string
+          opened_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          device_id?: string
+          id?: string
+          issue_type?: string
+          opened_at?: string
+          opened_by?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_maintenance_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_maintenance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           created_at: string
@@ -187,7 +250,10 @@ export type Database = {
           id: string
           is_active: boolean
           location: string | null
+          model: string | null
           name: string
+          notes: string | null
+          serial_number: string | null
           tenant_id: string | null
           type: Database["public"]["Enums"]["device_type"]
         }
@@ -197,7 +263,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           location?: string | null
+          model?: string | null
           name: string
+          notes?: string | null
+          serial_number?: string | null
           tenant_id?: string | null
           type?: Database["public"]["Enums"]["device_type"]
         }
@@ -207,7 +276,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           location?: string | null
+          model?: string | null
           name?: string
+          notes?: string | null
+          serial_number?: string | null
           tenant_id?: string | null
           type?: Database["public"]["Enums"]["device_type"]
         }
@@ -1250,6 +1322,14 @@ export type Database = {
             }
             Returns: Json
           }
+      report_device_issue: {
+        Args: {
+          p_description?: string
+          p_device_id: string
+          p_issue_type?: string
+        }
+        Returns: string
+      }
       restock_product: {
         Args: {
           p_note?: string
@@ -1299,6 +1379,10 @@ export type Database = {
           }
       transfer_session: {
         Args: { p_session_id: string; p_target_device_id: string }
+        Returns: undefined
+      }
+      update_device_maintenance: {
+        Args: { p_id: string; p_resolution_note?: string; p_status: string }
         Returns: undefined
       }
       validate_payment_parts: {
