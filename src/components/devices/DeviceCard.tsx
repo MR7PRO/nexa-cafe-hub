@@ -1,4 +1,4 @@
-import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock, User, CalendarCheck, Wallet, AlertTriangle } from 'lucide-react';
+import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock, User, CalendarCheck, Wallet, AlertTriangle, Wrench, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t, formatILS, formatDuration } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,14 @@ interface Session {
   };
 }
 
+interface MaintenanceInfo {
+  id: string;
+  status: 'open' | 'in_progress' | 'resolved';
+  issue_type: string;
+  description: string | null;
+  opened_at: string;
+}
+
 interface DeviceCardProps {
   device: {
     id: string;
@@ -30,24 +38,37 @@ interface DeviceCardProps {
     location: string | null;
   };
   session: Session | null;
+  maintenance?: MaintenanceInfo | null;
+  maintenanceLabel?: string;
+  statusLabelOverride?: string;
+  canResolveMaintenance?: boolean;
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
   onEnd: () => void;
   onTransfer: () => void;
   onExtendTimer?: () => void;
+  onReportIssue?: () => void;
+  onResolveIssue?: () => void;
 }
 
 export function DeviceCard({
   device,
   session,
+  maintenance,
+  maintenanceLabel,
+  statusLabelOverride,
+  canResolveMaintenance,
   onStart,
   onPause,
   onResume,
   onEnd,
   onTransfer,
   onExtendTimer,
+  onReportIssue,
+  onResolveIssue,
 }: DeviceCardProps) {
+
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
   const [currentCost, setCurrentCost] = useState(0);
