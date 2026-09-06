@@ -1,4 +1,4 @@
-import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock, User, CalendarCheck, Wallet, AlertTriangle } from 'lucide-react';
+import { Monitor, Gamepad2, Play, Pause, Square, ArrowLeftRight, Timer, Gauge, Users, Clock, User, CalendarCheck, Wallet, AlertTriangle, Wrench, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t, formatILS, formatDuration } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
