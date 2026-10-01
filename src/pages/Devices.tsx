@@ -36,6 +36,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { canManageDevices as canManageDevicesFor } from '@/lib/permissions';
+import { ReportIssueDialog } from '@/components/devices/ReportIssueDialog';
+import {
+  useOpenMaintenanceQuery,
+  useMaintenanceMutations,
+  ISSUE_TYPE_LABELS,
+  MAINTENANCE_STATUS_LABELS,
+} from '@/hooks/useMaintenance';
 
 export default function Devices() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,6 +62,9 @@ export default function Devices() {
   const { toast } = useToast();
   const { role } = useAuth();
   const queryClient = useQueryClient();
+  const [issueDevice, setIssueDevice] = useState<{ id: string; name: string } | null>(null);
+  const { data: maintenanceMap = {} } = useOpenMaintenanceQuery();
+  const { reportIssue, updateStatus } = useMaintenanceMutations();
 
   const { data: devices = [], isLoading: devicesLoading } = useDevicesQuery();
   const { data: sessions = {}, isLoading: sessionsLoading } = useActiveSessionsQuery();
@@ -277,12 +287,21 @@ export default function Devices() {
             key={device.id}
             device={device}
             session={sessions[device.id] || null}
+            maintenance={maintenanceMap[device.id] || null}
+            maintenanceLabel={maintenanceMap[device.id] ? ISSUE_TYPE_LABELS[maintenanceMap[device.id].issue_type] : undefined}
+            statusLabelOverride={maintenanceMap[device.id] ? MAINTENANCE_STATUS_LABELS[maintenanceMap[device.id].status] : undefined}
+            canResolveMaintenance={canManageDevices}
             onStart={() => workflow.openStart(device.id)}
             onPause={() => workflow.pause(device.id)}
             onResume={() => workflow.resume(device.id)}
             onEnd={() => workflow.openEnd(device.id)}
             onTransfer={() => workflow.openTransfer(device.id)}
             onExtendTimer={() => workflow.openExtendTimer(device.id)}
+            onReportIssue={() => setIssueDevice({ id: device.id, name: device.name })}
+            onResolveIssue={() =>
+              maintenanceMap[device.id] &&
+              updateStatus.mutate({ id: maintenanceMap[device.id].id, status: 'resolved' })
+            }
           />
         ))}
       </div>
@@ -333,6 +352,20 @@ export default function Devices() {
 
       {/* Shared session dialogs (start / end / transfer / extend) */}
       {workflow.dialogs}
+
+      <ReportIssueDialog
+        open={!!issueDevice}
+        deviceName={issueDevice?.name}
+        submitting={reportIssue.isPending}
+        onClose={() => setIssueDevice(null)}
+        onSubmit={(issueType, description) => {
+          if (!issueDevice) return;
+          reportIssue.mutate(
+            { deviceId: issueDevice.id, issueType, description },
+            { onSuccess: () => setIssueDevice(null) }
+          );
+        }}
+      />
 
       <SettleSessionDialog
         sessionId={settleSessionId}
