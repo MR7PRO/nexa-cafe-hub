@@ -126,8 +126,9 @@ export function DeviceCard({
 
   const Icon = device.type === 'playstation' ? Gamepad2 : Monitor;
 
-  const statusLabel = isRunning ? t('running') : isPaused ? t('paused') : t('idle');
-  const statusClass = isRunning ? 'status-running' : isPaused ? 'status-paused' : 'status-idle';
+  const underMaintenance = !!maintenance && isIdle;
+  const statusLabel = underMaintenance ? 'صيانة' : isRunning ? t('running') : isPaused ? t('paused') : t('idle');
+  const statusClass = underMaintenance ? 'bg-warning/20 text-warning' : isRunning ? 'status-running' : isPaused ? 'status-paused' : 'status-idle';
 
   // Timer progress percentage
   const timerProgress = isTimerMode && session?.timer_minutes 
@@ -277,12 +278,37 @@ export function DeviceCard({
         </div>
       )}
 
+      {/* Maintenance summary */}
+      {maintenance && (
+        <div className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+          <div className="flex items-center gap-2 font-medium text-warning">
+            <Wrench className="h-4 w-4" />
+            {statusLabelOverride || 'تحت الصيانة'}
+            {maintenanceLabel && <span className="text-foreground">— {maintenanceLabel}</span>}
+          </div>
+          {maintenance.description && (
+            <p className="mt-1 text-xs text-muted-foreground">{maintenance.description}</p>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="mt-4 flex flex-wrap gap-2">
-        {isIdle && (
+        {isIdle && !maintenance && (
           <Button onClick={onStart} className="flex-1 gap-2 touch-target" variant="default">
             <Play className="h-4 w-4" />
             {t('start')}
+          </Button>
+        )}
+        {maintenance && canResolveMaintenance && onResolveIssue && (
+          <Button onClick={onResolveIssue} className="flex-1 gap-2 touch-target" variant="secondary">
+            <CheckCircle2 className="h-4 w-4" />
+            تم الإصلاح
+          </Button>
+        )}
+        {!maintenance && onReportIssue && (
+          <Button onClick={onReportIssue} variant="outline" size="icon" aria-label="تسجيل عطل" title="تسجيل عطل" className="touch-target">
+            <Wrench className="h-4 w-4" />
           </Button>
         )}
         {isRunning && (

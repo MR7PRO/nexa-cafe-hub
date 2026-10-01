@@ -9,6 +9,7 @@ export interface ReportDevice {
   revenue: number;
   minutes: number;
   utilization_pct: number;
+  downtime_minutes?: number;
 }
 
 export interface ReportProduct {
@@ -50,6 +51,10 @@ export interface ReportMetrics {
   shift_cash_difference: number;
   shift_count: number;
   staff: ReportStaff[];
+  maintenance_events?: number;
+  maintenance_downtime_minutes?: number;
+  maintenance_open_count?: number;
+  device_downtime: Array<{ name: string; events?: number; downtime_minutes: number }>;
 }
 
 export function getPeriodRange(

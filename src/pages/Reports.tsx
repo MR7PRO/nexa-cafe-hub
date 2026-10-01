@@ -320,6 +320,18 @@ export default function Reports() {
           <p className="mt-1 text-xl font-bold text-warning">{m?.low_stock_count ?? 0}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-sm text-muted-foreground">أعطال الأجهزة / مدة التوقف</p>
+          <p className="mt-1 text-xl font-bold text-warning">{m?.maintenance_events ?? 0}</p>
+          <p className="text-xs text-muted-foreground">
+            {Math.round((m?.maintenance_downtime_minutes ?? 0) / 60)} ساعة توقف • مفتوح {m?.maintenance_open_count ?? 0}
+          </p>
+          {(m?.device_downtime?.length ?? 0) > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              الأكثر توقفاً: {m!.device_downtime[0].name}
+            </p>
+          )}
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-sm text-muted-foreground">فروقات الورديات النقدية</p>
           <p className={cn('mt-1 text-xl font-bold ils-amount', (m?.shift_cash_difference ?? 0) < 0 ? 'text-destructive' : 'text-success')}>
             {formatILS(m?.shift_cash_difference ?? 0)}
@@ -424,6 +436,9 @@ export default function Reports() {
                 <div className="flex items-center gap-4">
                   <span className="text-muted-foreground">{device.sessions} جلسة</span>
                   <span className="text-muted-foreground">{Number(device.utilization_pct).toFixed(0)}% استخدام</span>
+                  {Number(device.downtime_minutes ?? 0) > 0 && (
+                    <span className="text-warning">{Math.round(Number(device.downtime_minutes) / 60)} س توقف</span>
+                  )}
                   <span className="font-mono font-medium">{formatILS(Number(device.revenue))}</span>
                 </div>
               </div>
