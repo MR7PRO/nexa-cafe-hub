@@ -84,6 +84,76 @@ export type Database = {
           },
         ]
       }
+      customer_balance_movements: {
+        Row: {
+          balance_after: number
+          balance_before: number
+          balance_id: string | null
+          change_minutes: number
+          created_at: string
+          customer_id: string
+          id: string
+          movement_type: string
+          performed_by: string | null
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          tenant_id: string
+        }
+        Insert: {
+          balance_after: number
+          balance_before: number
+          balance_id?: string | null
+          change_minutes: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          movement_type: string
+          performed_by?: string | null
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          tenant_id: string
+        }
+        Update: {
+          balance_after?: number
+          balance_before?: number
+          balance_id?: string | null
+          change_minutes?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          movement_type?: string
+          performed_by?: string | null
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_balance_movements_balance_id_fkey"
+            columns: ["balance_id"]
+            isOneToOne: false
+            referencedRelation: "customer_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_balance_movements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_balance_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_balances: {
         Row: {
           created_at: string
@@ -1232,6 +1302,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_customer_balance: {
+        Args: {
+          p_balance_id: string
+          p_change_minutes: number
+          p_movement_type: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       adjust_stock: {
         Args: {
           p_movement_type: string
@@ -1252,6 +1331,7 @@ export type Database = {
       }
       compute_session_billing: { Args: { p_session_id: string }; Returns: Json }
       end_session: { Args: { p_session_id: string }; Returns: undefined }
+      find_customer_by_phone: { Args: { p_phone: string }; Returns: Json }
       find_or_create_customer: {
         Args: { p_name: string; p_phone?: string }
         Returns: string
@@ -1268,6 +1348,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_customer_profile: { Args: { p_customer_id: string }; Returns: Json }
       get_inventory_movements: {
         Args: { p_limit?: number; p_offset?: number; p_product_id: string }
         Returns: Json
@@ -1301,6 +1382,7 @@ export type Database = {
         Returns: undefined
       }
       next_ticket_no: { Args: { _tenant: string }; Returns: string }
+      normalize_phone: { Args: { p: string }; Returns: string }
       pause_session: { Args: { p_session_id: string }; Returns: undefined }
       process_sale:
         | {
@@ -1341,6 +1423,10 @@ export type Database = {
         Returns: Json
       }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
+      sell_loyalty_package: {
+        Args: { p_customer_id: string; p_package_id: string }
+        Returns: string
+      }
       settle_session: {
         Args: {
           p_manual_discount_ils?: number
