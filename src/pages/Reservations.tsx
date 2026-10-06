@@ -147,6 +147,7 @@ export default function Reservations() {
 
   const resetForm = () => {
     setFormDeviceId('');
+    setFormCustomer(null);
     setFormCustomerName('');
     setFormCustomerPhone('');
     setFormStartTime('14:00');
@@ -241,6 +242,17 @@ export default function Reservations() {
                 </Select>
               </div>
 
+              <CustomerPicker
+                label="زبون مسجل (اختياري)"
+                value={formCustomer}
+                onChange={(c) => {
+                  setFormCustomer(c);
+                  if (c) {
+                    setFormCustomerName(c.name);
+                    setFormCustomerPhone(c.phone || '');
+                  }
+                }}
+              />
               <div className="space-y-2">
                 <Label>اسم الزبون *</Label>
                 <div className="relative">
