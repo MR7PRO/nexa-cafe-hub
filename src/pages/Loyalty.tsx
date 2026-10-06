@@ -156,14 +156,10 @@ export default function Loyalty() {
     const pkg = packages.find(p => p.id === sellPackageId);
     if (!pkg) return;
 
-    const totalMinutes = (pkg.hours_included + pkg.bonus_hours) * 60;
-
-    const { error } = await supabase.from('customer_balances').insert({
-      customer_id: sellCustomerId,
-      package_id: sellPackageId,
-      remaining_minutes: totalMinutes,
-      total_minutes: totalMinutes,
-      sold_by: user?.id,
+    // Server-side sale: computes minutes, writes balance + movement ledger atomically.
+    const { error } = await supabase.rpc('sell_loyalty_package', {
+      p_customer_id: sellCustomerId,
+      p_package_id: sellPackageId,
     });
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
