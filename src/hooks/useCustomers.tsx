@@ -23,7 +23,7 @@ function sanitize(term: string) {
   return term.replace(/[(),*%]/g, ' ').trim();
 }
 
-function mapCustomer(row: any): CustomerSummary {
+export function mapCustomer(row: any): CustomerSummary {
   const balances: { id: string; remaining_minutes: number }[] = row.customer_balances || [];
   const sorted = [...balances].sort((a, b) => b.remaining_minutes - a.remaining_minutes);
   return {

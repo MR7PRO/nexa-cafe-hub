@@ -1,3 +1,4 @@
+import type { CustomerSummary } from '@/hooks/useCustomers';
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -127,6 +128,7 @@ export function usePOS() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [promotionId, setPromotionId] = useState<string | null>(null);
+  const [customer, setCustomer] = useState<CustomerSummary | null>(null);
 
   const products = productsQuery.data || [];
   const categories = categoriesQuery.data || [];
@@ -240,6 +242,7 @@ export function usePOS() {
         p_payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
         p_promotion_id: promotionId,
         p_manual_discount_ils: 0,
+        p_customer_id: customer?.id ?? null,
       });
       if (error) throw error;
       return data as {
@@ -257,6 +260,7 @@ export function usePOS() {
       });
       clearCart();
       setPromotionId(null);
+      setCustomer(null);
       // refresh only the affected data
       queryClient.invalidateQueries({ queryKey: posKeys.products });
       queryClient.invalidateQueries({ queryKey: posKeys.tickets });
@@ -326,6 +330,9 @@ export function usePOS() {
     total,
     promotionId,
     setPromotionId,
+    // optional customer
+    customer,
+    setCustomer,
     // payment
     pay,
     processing: checkout.isPending,

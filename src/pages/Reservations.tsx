@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { CustomerPicker } from '@/components/customers/CustomerPicker';
+import type { CustomerSummary } from '@/hooks/useCustomers';
 import { format, addDays, isSameDay, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { CalendarDays, Plus, Phone, User, Clock, Monitor, Gamepad2, X, Check, Trash2, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -59,6 +61,7 @@ export default function Reservations() {
   
   // Form state
   const [formDeviceId, setFormDeviceId] = useState('');
+  const [formCustomer, setFormCustomer] = useState<CustomerSummary | null>(null);
   const [formCustomerName, setFormCustomerName] = useState('');
   const [formCustomerPhone, setFormCustomerPhone] = useState('');
   const [formStartTime, setFormStartTime] = useState('14:00');
@@ -118,6 +121,7 @@ export default function Reservations() {
     try {
       const { error } = await supabase.from('reservations').insert({
         device_id: formDeviceId,
+        customer_id: formCustomer?.id ?? null,
         customer_name: formCustomerName,
         customer_phone: formCustomerPhone || null,
         reserved_date: format(selectedDate, 'yyyy-MM-dd'),
@@ -143,6 +147,7 @@ export default function Reservations() {
 
   const resetForm = () => {
     setFormDeviceId('');
+    setFormCustomer(null);
     setFormCustomerName('');
     setFormCustomerPhone('');
     setFormStartTime('14:00');
@@ -237,6 +242,17 @@ export default function Reservations() {
                 </Select>
               </div>
 
+              <CustomerPicker
+                label="زبون مسجل (اختياري)"
+                value={formCustomer}
+                onChange={(c) => {
+                  setFormCustomer(c);
+                  if (c) {
+                    setFormCustomerName(c.name);
+                    setFormCustomerPhone(c.phone || '');
+                  }
+                }}
+              />
               <div className="space-y-2">
                 <Label>اسم الزبون *</Label>
                 <div className="relative">
