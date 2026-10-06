@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
 import { usePOS } from '@/hooks/usePOS';
+import { CustomerPicker } from '@/components/customers/CustomerPicker';
 
 interface FullscreenPOSProps {
   onClose: () => void;
@@ -190,6 +191,12 @@ export function FullscreenPOS({ onClose }: FullscreenPOSProps) {
 
         {/* Totals & Payment — same shared implementation as the normal POS */}
         <div className="border-t border-border p-4">
+          <CustomerPicker
+            className="mb-3"
+            value={pos.customer}
+            onChange={pos.setCustomer}
+            placeholder="زبون (اختياري)"
+          />
           <CheckoutPanel
             subtotal={pos.subtotal}
             discount={pos.discount}
