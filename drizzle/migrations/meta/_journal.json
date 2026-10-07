@@ -15,6 +15,13 @@
       "when": 1791376502449,
       "tag": "0001_item_type_package",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791376528825,
+      "tag": "0002_sell_package_with_ticket",
+      "breakpoints": true
     }
   ]
 }

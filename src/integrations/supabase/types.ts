@@ -1423,10 +1423,19 @@ export type Database = {
         Returns: Json
       }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
-      sell_loyalty_package: {
-        Args: { p_customer_id: string; p_package_id: string }
-        Returns: string
-      }
+      sell_loyalty_package:
+        | {
+            Args: { p_customer_id: string; p_package_id: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_customer_id: string
+              p_package_id: string
+              p_payments: Json
+            }
+            Returns: Json
+          }
       settle_session: {
         Args: {
           p_manual_discount_ils?: number
