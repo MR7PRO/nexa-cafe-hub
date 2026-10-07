@@ -81,6 +81,8 @@ export default function Loyalty() {
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [sellCustomerId, setSellCustomerId] = useState('');
   const [sellPackageId, setSellPackageId] = useState('');
+  const [sellMethod, setSellMethod] = useState<'cash' | 'card'>('cash');
+  const [selling, setSelling] = useState(false);
 
   // Customer detail
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -156,15 +158,18 @@ export default function Loyalty() {
     const pkg = packages.find(p => p.id === sellPackageId);
     if (!pkg) return;
 
-    // Server-side sale: computes minutes, writes balance + movement ledger atomically.
-    const { error } = await supabase.rpc('sell_loyalty_package', {
+    // Server-side sale: one atomic step creates the receipt, payment, balance and history.
+    setSelling(true);
+    const { data, error } = await supabase.rpc('sell_loyalty_package', {
       p_customer_id: sellCustomerId,
       p_package_id: sellPackageId,
+      p_payments: [{ method: sellMethod, amount: Number(pkg.price_ils) }],
     });
+    setSelling(false);
     if (error) {
       toast({ title: t('error'), description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'تم البيع', description: `تم بيع باقة "${pkg.name}" بنجاح` });
+      toast({ title: 'تم البيع', description: `تم بيع باقة "${pkg.name}" — فاتورة رقم ${(data as { ticket_no?: string } | null)?.ticket_no ?? ''}` });
       setSellDialogOpen(false);
       setSellCustomerId('');
       setSellPackageId('');
@@ -450,6 +455,13 @@ export default function Loyalty() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>طريقة الدفع *</Label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <Button type="button" variant={sellMethod === 'cash' ? 'default' : 'outline'} onClick={() => setSellMethod('cash')}>نقدي</Button>
+                <Button type="button" variant={sellMethod === 'card' ? 'default' : 'outline'} onClick={() => setSellMethod('card')}>بطاقة</Button>
+              </div>
+            </div>
             {sellPackageId && (() => {
               const pkg = packages.find(p => p.id === sellPackageId);
               if (!pkg) return null;
@@ -472,7 +484,7 @@ export default function Loyalty() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSellDialogOpen(false)}>{t('cancel')}</Button>
-            <Button onClick={handleSellPackage}>تأكيد البيع</Button>
+            <Button onClick={handleSellPackage} disabled={selling}>تأكيد البيع</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
