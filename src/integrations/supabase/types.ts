@@ -1423,10 +1423,19 @@ export type Database = {
         Returns: Json
       }
       resume_session: { Args: { p_session_id: string }; Returns: undefined }
-      sell_loyalty_package: {
-        Args: { p_customer_id: string; p_package_id: string }
-        Returns: string
-      }
+      sell_loyalty_package:
+        | {
+            Args: { p_customer_id: string; p_package_id: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_customer_id: string
+              p_package_id: string
+              p_payments: Json
+            }
+            Returns: Json
+          }
       settle_session: {
         Args: {
           p_manual_discount_ils?: number
@@ -1492,7 +1501,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "super_admin"
       device_type: "playstation" | "pc"
-      item_type: "session" | "product"
+      item_type: "session" | "product" | "package"
       payment_method: "cash" | "card" | "mixed"
       session_status: "running" | "paused" | "ended"
       ticket_status: "open" | "paid" | "void"
@@ -1625,7 +1634,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "manager", "cashier", "super_admin"],
       device_type: ["playstation", "pc"],
-      item_type: ["session", "product"],
+      item_type: ["session", "product", "package"],
       payment_method: ["cash", "card", "mixed"],
       session_status: ["running", "paused", "ended"],
       ticket_status: ["open", "paid", "void"],
