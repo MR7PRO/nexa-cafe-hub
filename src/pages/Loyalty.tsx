@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select';
 import { StatCard } from '@/components/ui/stat-card';
 import { canManageCatalog } from '@/lib/permissions';
+import { CustomerProfileDialog, formatMinutes } from '@/components/customers/CustomerProfileDialog';
 
 interface Customer {
   id: string;
@@ -86,7 +87,6 @@ export default function Loyalty() {
 
   // Customer detail
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerBalances, setCustomerBalances] = useState<CustomerBalance[]>([]);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { toast } = useToast();
@@ -112,6 +112,18 @@ export default function Loyalty() {
     if (!newCustomer.name.trim()) {
       toast({ title: t('error'), description: 'يرجى إدخال اسم الزبون', variant: 'destructive' });
       return;
+    }
+    if (newCustomer.phone.trim()) {
+      const { data: existing } = await supabase.rpc('find_customer_by_phone', { p_phone: newCustomer.phone.trim() });
+      const ex = existing as { id: string; name: string } | null;
+      if (ex?.id) {
+        toast({ title: 'الزبون موجود مسبقاً', description: `هذا الرقم مسجل باسم "${ex.name}" — تم فتح ملفه بدلاً من إنشاء زبون مكرر.` });
+        setCustomerDialogOpen(false);
+        const found = customers.find(c => c.id === ex.id);
+        setSelectedCustomer(found ?? ({ id: ex.id, name: ex.name } as Customer));
+        setDetailOpen(true);
+        return;
+      }
     }
     const { error } = await supabase.from('customers').insert({
       name: newCustomer.name,
@@ -176,14 +188,8 @@ export default function Loyalty() {
     }
   };
 
-  const openCustomerDetail = async (customer: Customer) => {
+  const openCustomerDetail = (customer: Customer) => {
     setSelectedCustomer(customer);
-    const { data } = await supabase
-      .from('customer_balances')
-      .select('*, loyalty_packages(name)')
-      .eq('customer_id', customer.id)
-      .order('purchased_at', { ascending: false });
-    setCustomerBalances(data || []);
     setDetailOpen(true);
   };
 
@@ -489,63 +495,12 @@ export default function Loyalty() {
         </DialogContent>
       </Dialog>
 
-      {/* Customer Detail Dialog */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent dir="rtl" className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              {selectedCustomer?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedCustomer && (
-            <div className="space-y-4">
-              <div className="flex gap-4 text-sm">
-                {selectedCustomer.phone && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                    <span dir="ltr">{selectedCustomer.phone}</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-bold mb-3">الباقات المشتراة</h4>
-                {customerBalances.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">لا توجد باقات مشتراة</p>
-                ) : (
-                  <div className="space-y-3">
-                    {customerBalances.map(bal => {
-                      const usedPercent = ((bal.total_minutes - bal.remaining_minutes) / bal.total_minutes) * 100;
-                      const remainingHours = Math.floor(bal.remaining_minutes / 60);
-                      const remainingMins = bal.remaining_minutes % 60;
-                      return (
-                        <div key={bal.id} className="rounded-lg border border-border p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{bal.loyalty_packages?.name || 'باقة'}</span>
-                            <Badge variant={bal.remaining_minutes > 0 ? 'default' : 'secondary'}>
-                              {bal.remaining_minutes > 0 ? 'نشطة' : 'منتهية'}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            المتبقي: {remainingHours} ساعة {remainingMins > 0 ? `و ${remainingMins} دقيقة` : ''}
-                          </div>
-                          <div className="h-2 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${100 - usedPercent}%` }} />
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            تاريخ الشراء: {new Date(bal.purchased_at).toLocaleDateString('ar-EG')}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CustomerProfileDialog
+        customerId={selectedCustomer?.id ?? null}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        canAdjust={canManage}
+      />
     </div>
   );
 }
