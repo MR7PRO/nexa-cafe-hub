@@ -66,6 +66,7 @@ export default function Loyalty() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<LoyaltyPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeBalances, setActiveBalances] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Customer dialog
@@ -99,12 +100,14 @@ export default function Loyalty() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [custRes, pkgRes] = await Promise.all([
+    const [custRes, pkgRes, balRes] = await Promise.all([
       supabase.from('customers').select('*').order('created_at', { ascending: false }),
       supabase.from('loyalty_packages').select('*').order('created_at', { ascending: false }),
+      supabase.from('customer_balances').select('id', { count: 'exact', head: true }).gt('remaining_minutes', 0),
     ]);
     if (custRes.data) setCustomers(custRes.data);
     if (pkgRes.data) setPackages(pkgRes.data);
+    setActiveBalances(balRes.count ?? 0);
     setLoading(false);
   };
 
@@ -202,7 +205,6 @@ export default function Loyalty() {
   const activePackages = packages.filter(p => p.is_active);
 
   const totalCustomers = customers.length;
-  const totalActiveBalances = customerBalances.filter(b => b.remaining_minutes > 0).length;
 
   if (loading) {
     return (
@@ -241,8 +243,8 @@ export default function Loyalty() {
           icon={<Package className="h-5 w-5" />}
         />
         <StatCard
-          title="الباقات النشطة"
-          value={activePackages.length.toString()}
+          title="أرصدة نشطة"
+          value={activeBalances.toString()}
           icon={<Clock className="h-5 w-5" />}
         />
       </div>
