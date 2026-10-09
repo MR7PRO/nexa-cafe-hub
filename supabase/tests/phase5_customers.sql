@@ -5,11 +5,10 @@ DO $$
 DECLARE
   t1 uuid := gen_random_uuid();
   t2 uuid := gen_random_uuid();
-  u1 uuid := gen_random_uuid();
+  u1 uuid := (SELECT r.user_id FROM public.user_roles r WHERE r.role = 'cashier' LIMIT 1); -- reused temporarily, rolled back
   pkg uuid; c1 uuid; c2 uuid; bal uuid; res jsonb; n int; ok boolean;
 BEGIN
   INSERT INTO public.tenants(id, name) VALUES (t1, 'test-a'), (t2, 'test-b');
-  INSERT INTO auth.users(id, email, instance_id, aud, role) VALUES (u1, 'phase5-test-'||u1||'@x.test', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
   INSERT INTO public.profiles(id, name, tenant_id) VALUES (u1, 'tester', t1)
     ON CONFLICT (id) DO UPDATE SET tenant_id = t1;
   DELETE FROM public.user_roles WHERE user_id = u1;
