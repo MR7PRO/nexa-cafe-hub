@@ -7,7 +7,6 @@
 -- each one its own café. Tests then act AS that user via request.jwt.claims so
 -- tenant-assignment triggers run exactly as in production.
 
--- Helper used by all blocks (created and dropped inside each transaction).
 
 -- 1. phone uniqueness (same café blocked, normalized, race-safe index, other café allowed)
 DO $$
@@ -123,7 +122,7 @@ END $$;
 
 -- 7. cashier cannot adjust balances directly
 DO $$
-DECLARE ua uuid := gen_random_uuid(); c1 uuid; pkg uuid; res jsonb; ok boolean;
+DECLARE ua uuid := gen_random_uuid(); c1 uuid; pkg uuid; res jsonb; ok boolean; rc int;
 BEGIN
   INSERT INTO auth.users(id, instance_id, aud, role, email) VALUES
     (ua, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ua || '@test.local');
@@ -139,7 +138,7 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE authenticated';
   ok := false;
   BEGIN UPDATE public.customer_balances SET remaining_minutes = 9999 WHERE id = (res->>'balance_id')::uuid;
-    GET DIAGNOSTICS ok = ROW_COUNT; ok := NOT ok;
+    GET DIAGNOSTICS rc = ROW_COUNT; ok := rc = 0;
   EXCEPTION WHEN OTHERS THEN ok := true; END;
   EXECUTE 'RESET ROLE';
   IF NOT ok THEN RAISE EXCEPTION 'FAIL direct balance edit allowed'; END IF;
