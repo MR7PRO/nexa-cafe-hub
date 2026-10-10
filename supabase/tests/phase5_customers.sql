@@ -51,7 +51,7 @@ END $$;
 
 -- 2. cross-tenant separation (RLS + lookup RPCs)
 DO $$
-DECLARE ua uuid; ub uuid; _t uuid; ca uuid; cb uuid; n int;
+DECLARE ua uuid; ub uuid; _t uuid; ca uuid; cb uuid; n int; ok boolean;
 BEGIN
   ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
   INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
@@ -71,7 +71,10 @@ BEGIN
   SELECT count(*) INTO n FROM public.customers WHERE id = ca;
   IF n <> 1 THEN RAISE EXCEPTION 'FAIL own customer hidden'; END IF;
   IF public.find_customer_by_phone('0597777777')->>'id' <> ca::text THEN RAISE EXCEPTION 'FAIL lookup crossed cafés'; END IF;
-  IF public.get_customer_profile(cb) IS NOT NULL AND public.get_customer_profile(cb)->>'id' IS NOT NULL THEN RAISE EXCEPTION 'FAIL profile crossed cafés'; END IF;
+  ok := true;
+  BEGIN IF public.get_customer_profile(cb)->>'id' IS NOT NULL THEN ok := false; END IF;
+  EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL profile crossed cafés'; END IF;
   EXECUTE 'RESET ROLE';
   RAISE EXCEPTION 'PASS tenant_separation';
 END $$;
