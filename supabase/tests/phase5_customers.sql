@@ -3,18 +3,23 @@
 -- customers, receipts) is rolled back. No live business data is touched.
 -- Expected: every block reports 'PASS <name>'. Anything else is a failure.
 --
--- Isolation: each block creates throw-away auth users; the signup trigger gives
--- each one its own café. Tests then act AS that user via request.jwt.claims so
+-- Isolation: each block temporarily moves existing staff profiles into brand-new
+-- test cafés with a fixed role (rolled back, so real accounts are unchanged). Tests then act AS that user via request.jwt.claims so
 -- tenant-assignment triggers run exactly as in production.
 
 
 -- 1. phone uniqueness (same café blocked, normalized, race-safe index, other café allowed)
 DO $$
-DECLARE ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); ta uuid; tb uuid; ok boolean; id1 uuid; id2 uuid;
+DECLARE ua uuid; ub uuid; _t uuid; ta uuid; tb uuid; ok boolean; id1 uuid; id2 uuid;
 BEGIN
-  INSERT INTO auth.users(id, instance_id, aud, role, email) VALUES
-    (ua, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ua || '@test.local'),
-    (ub, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ub || '@test.local');
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  ub := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 1 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ub;
+  DELETE FROM public.user_roles WHERE user_id = ub; INSERT INTO public.user_roles(user_id, role) VALUES (ub, 'admin');
   SELECT tenant_id INTO ta FROM public.profiles WHERE id = ua;
   SELECT tenant_id INTO tb FROM public.profiles WHERE id = ub;
   IF ta IS NULL OR tb IS NULL OR ta = tb THEN RAISE EXCEPTION 'FAIL fixture tenants'; END IF;
@@ -46,11 +51,16 @@ END $$;
 
 -- 2. cross-tenant separation (RLS + lookup RPCs)
 DO $$
-DECLARE ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); ca uuid; cb uuid; n int;
+DECLARE ua uuid; ub uuid; _t uuid; ca uuid; cb uuid; n int;
 BEGIN
-  INSERT INTO auth.users(id, instance_id, aud, role, email) VALUES
-    (ua, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ua || '@test.local'),
-    (ub, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ub || '@test.local');
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  ub := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 1 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ub;
+  DELETE FROM public.user_roles WHERE user_id = ub; INSERT INTO public.user_roles(user_id, role) VALUES (ub, 'admin');
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   INSERT INTO public.customers(name, phone) VALUES ('B', '0597777777') RETURNING id INTO cb;
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
@@ -68,10 +78,12 @@ END $$;
 
 -- 3. atomic package sale + 4. ledger + 5. no negative balance + 6. receipt void removes unused hours
 DO $$
-DECLARE ua uuid := gen_random_uuid(); ta uuid; c1 uuid; pkg uuid; res jsonb; bal uuid; n int; ok boolean;
+DECLARE ua uuid; _t uuid; ta uuid; c1 uuid; pkg uuid; res jsonb; bal uuid; n int; ok boolean;
 BEGIN
-  INSERT INTO auth.users(id, instance_id, aud, role, email) VALUES
-    (ua, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ua || '@test.local');
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
   SELECT tenant_id INTO ta FROM public.profiles WHERE id = ua;
   DELETE FROM public.user_roles WHERE user_id = ua;
   INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'manager');
@@ -122,10 +134,12 @@ END $$;
 
 -- 7. cashier cannot adjust balances directly
 DO $$
-DECLARE ua uuid := gen_random_uuid(); c1 uuid; pkg uuid; res jsonb; ok boolean; rc int;
+DECLARE ua uuid; _t uuid; c1 uuid; pkg uuid; res jsonb; ok boolean; rc int;
 BEGIN
-  INSERT INTO auth.users(id, instance_id, aud, role, email) VALUES
-    (ua, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ua || '@test.local');
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
   PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
   INSERT INTO public.customers(name, phone) VALUES ('A', '0596666666') RETURNING id INTO c1;
   INSERT INTO public.loyalty_packages(name, hours_included, bonus_hours, price_ils) VALUES ('t', 1, 0, 20) RETURNING id INTO pkg;
