@@ -29,6 +29,13 @@
       "when": 1791549253891,
       "tag": "0003_void_package_hours_and_lock_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791619491666,
+      "tag": "0004_customers_unique_normalized_phone",
+      "breakpoints": true
     }
   ]
 }
