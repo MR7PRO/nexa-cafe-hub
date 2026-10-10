@@ -1,61 +1,163 @@
--- Phase 5 database safety tests. Runs everything inside one block and always
--- rolls back (ends with an exception), so no real data is ever kept.
--- Success = error message 'PHASE5 TESTS PASSED'.
+-- Phase 5 database tests. Each case is its own DO block that ALWAYS ends with
+-- an exception, so everything it created (temporary test accounts, cafés,
+-- customers, receipts) is rolled back. No live business data is touched.
+-- Expected: every block reports 'PASS <name>'. Anything else is a failure.
+--
+-- Isolation: each block temporarily moves existing staff profiles into brand-new
+-- test cafés with a fixed role (rolled back, so real accounts are unchanged). Tests then act AS that user via request.jwt.claims so
+-- tenant-assignment triggers run exactly as in production.
+
+
+-- 1. phone uniqueness (same café blocked, normalized, race-safe index, other café allowed)
 DO $$
-DECLARE
-  t1 uuid := gen_random_uuid();
-  t2 uuid := gen_random_uuid();
-  u1 uuid := (SELECT r.user_id FROM public.user_roles r WHERE r.role = 'cashier' LIMIT 1); -- reused temporarily, rolled back
-  pkg uuid; c1 uuid; c2 uuid; bal uuid; res jsonb; n int; ok boolean;
+DECLARE ua uuid; ub uuid; _t uuid; ta uuid; tb uuid; ok boolean; id1 uuid; id2 uuid;
 BEGIN
-  INSERT INTO public.tenants(id, name) VALUES (t1, 'test-a'), (t2, 'test-b');
-  INSERT INTO public.profiles(id, name, tenant_id) VALUES (u1, 'tester', t1)
-    ON CONFLICT (id) DO UPDATE SET tenant_id = t1;
-  DELETE FROM public.user_roles WHERE user_id = u1;
-  INSERT INTO public.user_roles(user_id, role) VALUES (u1, 'manager');
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  ub := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 1 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ub;
+  DELETE FROM public.user_roles WHERE user_id = ub; INSERT INTO public.user_roles(user_id, role) VALUES (ub, 'admin');
+  SELECT tenant_id INTO ta FROM public.profiles WHERE id = ua;
+  SELECT tenant_id INTO tb FROM public.profiles WHERE id = ub;
+  IF ta IS NULL OR tb IS NULL OR ta = tb THEN RAISE EXCEPTION 'FAIL fixture tenants'; END IF;
 
-  -- 1. phone normalization
-  IF public.normalize_phone(' 059-123 4567 ') <> '0591234567' THEN RAISE EXCEPTION 'FAIL normalize_phone'; END IF;
-
-  -- 2. duplicate phone blocked in same café, allowed in another café
-  INSERT INTO public.customers(name, phone, tenant_id) VALUES ('A', '059-1234567', t1) RETURNING id INTO c1;
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  IF public.normalize_phone(' 059-123 4567 ') <> '0591234567' THEN RAISE EXCEPTION 'FAIL normalize'; END IF;
+  INSERT INTO public.customers(name, phone) VALUES ('A', '059-1234567');
+  IF (SELECT tenant_id FROM public.customers WHERE name='A' AND tenant_id = ta) IS NULL THEN RAISE EXCEPTION 'FAIL tenant not set'; END IF;
   ok := false;
-  BEGIN INSERT INTO public.customers(name, phone, tenant_id) VALUES ('B', '0591234567', t1);
+  BEGIN INSERT INTO public.customers(name, phone) VALUES ('B', '0591234567'); EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL duplicate allowed (trigger)'; END IF;
+  -- bypass trigger to prove the unique index alone blocks a race
+  ok := false;
+  ALTER TABLE public.customers DISABLE TRIGGER prevent_duplicate_customer_phone_trg;
+  BEGIN INSERT INTO public.customers(name, phone) VALUES ('B2', '059 123 4567'); EXCEPTION WHEN unique_violation THEN ok := true; END;
+  ALTER TABLE public.customers ENABLE TRIGGER prevent_duplicate_customer_phone_trg;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL duplicate allowed (index)'; END IF;
+  -- empty / null phones never collide
+  INSERT INTO public.customers(name, phone) VALUES ('N1', NULL), ('N2', NULL), ('E1', ''), ('E2', ' ');
+  -- find_or_create reuses, never duplicates
+  id1 := public.find_or_create_customer('Other name', '+059-1234567'::text);
+  id2 := public.find_or_create_customer('A', '0591234567');
+  IF id2 <> (SELECT id FROM public.customers WHERE name='A' AND tenant_id=ta) THEN RAISE EXCEPTION 'FAIL find_or_create reuse'; END IF;
+  -- other café may use the same number
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+  INSERT INTO public.customers(name, phone) VALUES ('C', '0591234567');
+  RAISE EXCEPTION 'PASS phone_uniqueness';
+END $$;
+
+-- 2. cross-tenant separation (RLS + lookup RPCs)
+DO $$
+DECLARE ua uuid; ub uuid; _t uuid; ca uuid; cb uuid; n int; ok boolean;
+BEGIN
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  ub := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 1 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ub;
+  DELETE FROM public.user_roles WHERE user_id = ub; INSERT INTO public.user_roles(user_id, role) VALUES (ub, 'admin');
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+  INSERT INTO public.customers(name, phone) VALUES ('B', '0597777777') RETURNING id INTO cb;
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  INSERT INTO public.customers(name, phone) VALUES ('A', '0597777777') RETURNING id INTO ca;
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  SELECT count(*) INTO n FROM public.customers WHERE id = cb;
+  IF n <> 0 THEN RAISE EXCEPTION 'FAIL other café customer visible'; END IF;
+  SELECT count(*) INTO n FROM public.customers WHERE id = ca;
+  IF n <> 1 THEN RAISE EXCEPTION 'FAIL own customer hidden'; END IF;
+  IF public.find_customer_by_phone('0597777777')->>'id' <> ca::text THEN RAISE EXCEPTION 'FAIL lookup crossed cafés'; END IF;
+  ok := true;
+  BEGIN IF public.get_customer_profile(cb)->>'id' IS NOT NULL THEN ok := false; END IF;
   EXCEPTION WHEN OTHERS THEN ok := true; END;
-  IF NOT ok THEN RAISE EXCEPTION 'FAIL duplicate phone allowed in same tenant'; END IF;
-  INSERT INTO public.customers(name, phone, tenant_id) VALUES ('C', '0591234567', t2) RETURNING id INTO c2;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL profile crossed cafés'; END IF;
+  EXECUTE 'RESET ROLE';
+  RAISE EXCEPTION 'PASS tenant_separation';
+END $$;
 
-  -- act as the manager of café 1
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);
+-- 3. atomic package sale + 4. ledger + 5. no negative balance + 6. receipt void removes unused hours
+DO $$
+DECLARE ua uuid; _t uuid; ta uuid; c1 uuid; pkg uuid; res jsonb; bal uuid; n int; ok boolean;
+BEGIN
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  SELECT tenant_id INTO ta FROM public.profiles WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua;
+  INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'manager');
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  INSERT INTO public.customers(name, phone) VALUES ('A', '0598888888') RETURNING id INTO c1;
+  INSERT INTO public.loyalty_packages(name, hours_included, bonus_hours, price_ils) VALUES ('t', 2, 1, 50) RETURNING id INTO pkg;
 
-  -- 3. selling a package creates receipt + hours + history
-  INSERT INTO public.loyalty_packages(name, hours_included, bonus_hours, price_ils, tenant_id)
-    VALUES ('test', 2, 1, 50, t1) RETURNING id INTO pkg;
+  -- underpayment rejected, nothing written
+  ok := false;
+  BEGIN PERFORM public.sell_loyalty_package(c1, pkg, '[{"method":"cash","amount":10}]'::jsonb); EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL underpaid sale accepted'; END IF;
+  IF EXISTS (SELECT 1 FROM public.customer_balances WHERE customer_id = c1) THEN RAISE EXCEPTION 'FAIL partial sale written'; END IF;
+
   res := public.sell_loyalty_package(c1, pkg, '[{"method":"cash","amount":50}]'::jsonb);
   bal := (res->>'balance_id')::uuid;
   SELECT remaining_minutes INTO n FROM public.customer_balances WHERE id = bal;
-  IF n <> 180 THEN RAISE EXCEPTION 'FAIL package minutes %', n; END IF;
+  IF n <> 180 THEN RAISE EXCEPTION 'FAIL minutes %', n; END IF;
+  IF (SELECT status FROM public.tickets WHERE id = (res->>'ticket_id')::uuid) <> 'paid' THEN RAISE EXCEPTION 'FAIL receipt'; END IF;
+  IF (SELECT sum(amount_ils) FROM public.payments WHERE ticket_id = (res->>'ticket_id')::uuid) <> 50 THEN RAISE EXCEPTION 'FAIL payment'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.ticket_items WHERE ticket_id = (res->>'ticket_id')::uuid AND item_type = 'package') THEN RAISE EXCEPTION 'FAIL item'; END IF;
+  RAISE NOTICE 'ok package_sale';
 
-  -- 4. balance can never go below zero
+  -- no negative balance
   ok := false;
-  BEGIN PERFORM public.adjust_customer_balance(bal, -999, 'manual_adjustment', 'test');
-  EXCEPTION WHEN OTHERS THEN ok := true; END;
-  IF NOT ok THEN RAISE EXCEPTION 'FAIL balance went negative'; END IF;
+  BEGIN PERFORM public.adjust_customer_balance(bal, -999, 'manual_adjustment', 'x'); EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL negative allowed'; END IF;
+  ok := false;
+  BEGIN PERFORM public.adjust_customer_balance(bal, -10, 'manual_adjustment', ''); EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL reasonless adjust allowed'; END IF;
+  PERFORM public.adjust_customer_balance(bal, -60, 'manual_adjustment', 'used');
+  RAISE NOTICE 'ok no_negative';
 
-  -- 5. cancelling the package receipt removes the unused hours
-  PERFORM public.adjust_customer_balance(bal, -60, 'manual_adjustment', 'used some');
+  -- ledger consistency: every movement chains before->after
+  IF EXISTS (SELECT 1 FROM public.customer_balance_movements WHERE balance_id = bal AND balance_before + change_minutes <> balance_after)
+    THEN RAISE EXCEPTION 'FAIL ledger arithmetic'; END IF;
+  SELECT count(*) INTO n FROM public.customer_balance_movements WHERE balance_id = bal;
+  IF n <> 2 THEN RAISE EXCEPTION 'FAIL ledger count %', n; END IF;
+  RAISE NOTICE 'ok ledger';
+
+  -- void removes only the unused hours, ledgered
   PERFORM public.void_ticket((res->>'ticket_id')::uuid, 'test cancel', 'void', NULL);
   SELECT remaining_minutes INTO n FROM public.customer_balances WHERE id = bal;
-  IF n <> 0 THEN RAISE EXCEPTION 'FAIL hours left after cancel: %', n; END IF;
+  IF n <> 0 THEN RAISE EXCEPTION 'FAIL hours after void %', n; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.customer_balance_movements WHERE balance_id = bal AND change_minutes = -120) THEN RAISE EXCEPTION 'FAIL void not ledgered'; END IF;
+  IF (SELECT sum(change_minutes) FROM public.customer_balance_movements WHERE balance_id = bal) <> 0 THEN RAISE EXCEPTION 'FAIL ledger sum'; END IF;
+  RAISE EXCEPTION 'PASS package_sale+no_negative+ledger+void';
+END $$;
 
-  -- 6. café isolation: café 1 staff cannot see café 2 customers
+-- 7. cashier cannot adjust balances directly
+DO $$
+DECLARE ua uuid; _t uuid; c1 uuid; pkg uuid; res jsonb; ok boolean; rc int;
+BEGIN
+  ua := (SELECT id FROM public.profiles ORDER BY created_at OFFSET 0 LIMIT 1);
+  INSERT INTO public.tenants(id, name) VALUES (gen_random_uuid(), 'test') RETURNING id INTO _t;
+  UPDATE public.profiles SET tenant_id = _t WHERE id = ua;
+  DELETE FROM public.user_roles WHERE user_id = ua; INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'admin');
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  INSERT INTO public.customers(name, phone) VALUES ('A', '0596666666') RETURNING id INTO c1;
+  INSERT INTO public.loyalty_packages(name, hours_included, bonus_hours, price_ils) VALUES ('t', 1, 0, 20) RETURNING id INTO pkg;
+  res := public.sell_loyalty_package(c1, pkg, '[{"method":"card","amount":20}]'::jsonb);
+  DELETE FROM public.user_roles WHERE user_id = ua;
+  INSERT INTO public.user_roles(user_id, role) VALUES (ua, 'cashier');
+  ok := false;
+  BEGIN PERFORM public.adjust_customer_balance((res->>'balance_id')::uuid, 30, 'manual_adjustment', 'x'); EXCEPTION WHEN OTHERS THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL cashier adjusted balance'; END IF;
   EXECUTE 'SET LOCAL ROLE authenticated';
-  SELECT count(*) INTO n FROM public.customers WHERE id = c2;
-  IF n <> 0 THEN RAISE EXCEPTION 'FAIL tenant isolation (customers)'; END IF;
-  SELECT count(*) INTO n FROM public.customers WHERE id = c1;
-  IF n <> 1 THEN RAISE EXCEPTION 'FAIL own customer not visible'; END IF;
-  IF public.find_customer_by_phone('0591234567')->>'id' <> c1::text THEN RAISE EXCEPTION 'FAIL phone lookup crossed tenants'; END IF;
+  ok := false;
+  BEGIN UPDATE public.customer_balances SET remaining_minutes = 9999 WHERE id = (res->>'balance_id')::uuid;
+    GET DIAGNOSTICS rc = ROW_COUNT; ok := rc = 0;
+  EXCEPTION WHEN OTHERS THEN ok := true; END;
   EXECUTE 'RESET ROLE';
-
-  RAISE EXCEPTION 'PHASE5 TESTS PASSED';
+  IF NOT ok THEN RAISE EXCEPTION 'FAIL direct balance edit allowed'; END IF;
+  RAISE EXCEPTION 'PASS balance_permissions';
 END $$;
