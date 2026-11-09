@@ -1,0 +1,3 @@
+# Architecture rules
+- Keep the root route public for signed-out visitors through HomeRoute, while authenticated staff retain the protected dashboard at the same URL; this preserves existing staff workflows without exposing café data.
+- Keep static homepage metadata in index.html aligned with the root entry in RouteMeta, and let RouteMeta own canonicals; this avoids mismatched previews and duplicate canonical tags.
