@@ -1,20 +1,20 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-vi.mock('@/pages/Index', () => ({ default: () => <div data-testid="public-home" /> }));
+import { Fragment } from 'react';
+import { describe, expect, it } from 'vitest';
+import Index from '@/pages/Index';
 import { HomeRoute } from './HomeRoute';
-
-afterEach(cleanup);
 
 describe('homepage access', () => {
   it('shows public content without exposing the staff dashboard to visitors', () => {
-    render(<HomeRoute authenticated={false}><div data-testid="staff-dashboard" /></HomeRoute>);
-    expect(screen.getByTestId('public-home')).toBeInTheDocument();
-    expect(screen.queryByTestId('staff-dashboard')).not.toBeInTheDocument();
+    const dashboard = <div />;
+    const result = HomeRoute({ authenticated: false, children: dashboard });
+    expect(result.type).toBe(Index);
+    expect(result.props.children).toBeUndefined();
   });
 
   it('preserves the dashboard for signed-in staff at the same address', () => {
-    render(<HomeRoute authenticated><div data-testid="staff-dashboard" /></HomeRoute>);
-    expect(screen.getByTestId('staff-dashboard')).toBeInTheDocument();
-    expect(screen.queryByTestId('public-home')).not.toBeInTheDocument();
+    const dashboard = <div />;
+    const result = HomeRoute({ authenticated: true, children: dashboard });
+    expect(result.type).toBe(Fragment);
+    expect(result.props.children).toBe(dashboard);
   });
 });
