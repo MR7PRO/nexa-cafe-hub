@@ -1,3 +1,4 @@
+import type React from 'react';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Reuse one context across live reloads so a reloaded provider and its consumers always match.
+const authContextStore = globalThis as typeof globalThis & {
+  __nexaAuthContext?: React.Context<AuthContextType | undefined>;
+};
+const AuthContext =
+  authContextStore.__nexaAuthContext ??
+  (authContextStore.__nexaAuthContext = createContext<AuthContextType | undefined>(undefined));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
