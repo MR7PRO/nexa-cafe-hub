@@ -40,6 +40,8 @@ import {
 } from '@/components/ui/input-otp';
 import { canRefundTicket } from '@/lib/permissions';
 
+const escapeHtml = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
 interface TicketItem {
   id: string;
   name: string;
@@ -188,8 +190,8 @@ export default function Tickets() {
     const items = ticket.ticket_items || [];
     const itemsHTML = items.map(item => `
       <tr>
-        <td style="text-align: right; padding: 4px 0;">${item.name}</td>
-        <td style="text-align: center; padding: 4px 8px;">${item.qty}</td>
+        <td style="text-align: right; padding: 4px 0;">${escapeHtml(item.name)}</td>
+        <td style="text-align: center; padding: 4px 8px;">${Number(item.qty)}</td>
         <td style="text-align: left; padding: 4px 0; font-family: monospace;">${item.total_ils.toFixed(2)} ₪</td>
       </tr>
     `).join('');
@@ -199,7 +201,7 @@ export default function Tickets() {
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
-        <title>فاتورة ${ticket.ticket_no}</title>
+        <title>فاتورة ${escapeHtml(ticket.ticket_no)}</title>
         <style>
           body {
             font-family: 'Arial', sans-serif;
@@ -263,7 +265,7 @@ export default function Tickets() {
         
         <div class="info">
           <span>رقم الفاتورة:</span>
-          <span style="font-family: monospace;">${ticket.ticket_no}</span>
+          <span style="font-family: monospace;">${escapeHtml(ticket.ticket_no)}</span>
         </div>
         <div class="info">
           <span>التاريخ:</span>
