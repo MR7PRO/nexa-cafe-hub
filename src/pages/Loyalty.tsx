@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createSaleRequest } from '@/lib/saleRequest';
 import { Plus, Search, Users, Package, Clock, CreditCard, Phone, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { t, formatILS } from '@/lib/i18n';
@@ -92,6 +93,8 @@ export default function Loyalty() {
 
   const { toast } = useToast();
   const { user, role } = useAuth();
+  const saleRequest = useMemo(() => createSaleRequest(`package:${user?.id ?? 'signed-out'}`), [user?.id]);
+  const saleInFlight = useRef(false);
   const canManage = canManageCatalog(role);
 
   useEffect(() => {
@@ -166,6 +169,7 @@ export default function Loyalty() {
   };
 
   const handleSellPackage = async () => {
+    if (saleInFlight.current) return;
     if (!sellCustomerId || !sellPackageId) {
       toast({ title: t('error'), description: 'يرجى اختيار الزبون والباقة', variant: 'destructive' });
       return;
@@ -174,20 +178,30 @@ export default function Loyalty() {
     if (!pkg) return;
 
     // Server-side sale: one atomic step creates the receipt, payment, balance and history.
+    saleInFlight.current = true;
     setSelling(true);
-    const { data, error } = await supabase.rpc('sell_loyalty_package', {
-      p_customer_id: sellCustomerId,
-      p_package_id: sellPackageId,
-      p_payments: [{ method: sellMethod, amount: Number(pkg.price_ils) }],
-    });
-    setSelling(false);
-    if (error) {
-      toast({ title: t('error'), description: error.message, variant: 'destructive' });
-    } else {
+    try {
+      const payload = {
+        p_customer_id: sellCustomerId,
+        p_package_id: sellPackageId,
+        p_payments: [{ method: sellMethod, amount: Number(pkg.price_ils) }],
+      };
+      const { data, error } = await supabase.rpc('sell_loyalty_package', {
+        ...payload,
+        p_request_id: saleRequest.get(payload),
+      });
+      if (error) throw error;
+      saleRequest.complete();
       toast({ title: 'تم البيع', description: `تم بيع باقة "${pkg.name}" — فاتورة رقم ${(data as { ticket_no?: string } | null)?.ticket_no ?? ''}` });
       setSellDialogOpen(false);
       setSellCustomerId('');
       setSellPackageId('');
+      fetchData();
+    } catch (error) {
+      toast({ title: t('error'), description: error instanceof Error ? error.message : String(error), variant: 'destructive' });
+    } finally {
+      saleInFlight.current = false;
+      setSelling(false);
     }
   };
 

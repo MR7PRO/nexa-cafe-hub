@@ -891,6 +891,51 @@ export type Database = {
           },
         ]
       }
+      sale_requests: {
+        Row: {
+          actor_id: string
+          created_at: string
+          operation: string
+          payload: Json
+          request_id: string
+          result: Json | null
+          tenant_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          operation: string
+          payload: Json
+          request_id: string
+          result?: Json | null
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          operation?: string
+          payload?: Json
+          request_id?: string
+          result?: Json | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_requests_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           billed_minutes: number | null
@@ -1404,6 +1449,17 @@ export type Database = {
             }
             Returns: Json
           }
+        | {
+            Args: {
+              p_customer_id: string
+              p_items: Json
+              p_manual_discount_ils: number
+              p_payments: Json
+              p_promotion_id: string
+              p_request_id: string
+            }
+            Returns: Json
+          }
       report_device_issue: {
         Args: {
           p_description?: string
@@ -1433,6 +1489,15 @@ export type Database = {
               p_customer_id: string
               p_package_id: string
               p_payments: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_customer_id: string
+              p_package_id: string
+              p_payments: Json
+              p_request_id: string
             }
             Returns: Json
           }

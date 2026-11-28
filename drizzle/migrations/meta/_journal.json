@@ -57,6 +57,13 @@
       "when": 1795782143024,
       "tag": "0007_proportional_partial_refunds",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795863287695,
+      "tag": "0008_sale_retry_and_refund_integrity",
+      "breakpoints": true
     }
   ]
 }

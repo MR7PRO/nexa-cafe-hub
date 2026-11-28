@@ -1,5 +1,7 @@
 import type { CustomerSummary } from '@/hooks/useCustomers';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { createSaleRequest } from '@/lib/saleRequest';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -119,6 +121,9 @@ function usePromotionsQuery() {
 export function usePOS() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const request = useMemo(() => createSaleRequest(`pos:${user?.id ?? 'signed-out'}`), [user?.id]);
+  const paying = useRef(false);
 
   const productsQuery = useProductsQuery();
   const categoriesQuery = useCategoriesQuery();
@@ -237,12 +242,16 @@ export function usePOS() {
 
   const checkout = useMutation({
     mutationFn: async (payments: PaymentPart[]) => {
-      const { data, error } = await supabase.rpc('process_sale', {
+      const payload = {
         p_items: cart.map((item) => ({ product_id: item.id, qty: item.qty })),
         p_payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
         p_promotion_id: promotionId,
         p_manual_discount_ils: 0,
         p_customer_id: customer?.id ?? null,
+      };
+      const { data, error } = await supabase.rpc('process_sale', {
+        ...payload,
+        p_request_id: request.get(payload),
       });
       if (error) throw error;
       return data as {
@@ -254,6 +263,7 @@ export function usePOS() {
       };
     },
     onSuccess: (result) => {
+      request.complete();
       toast({
         title: t('paymentSuccess'),
         description: `${t('ticketNo')}: ${result.ticket_no}`,
@@ -276,6 +286,7 @@ export function usePOS() {
   });
 
   const pay = async (method: PaymentMethod, parts?: PaymentPart[]) => {
+    if (paying.current) return;
     if (cart.length === 0) {
       toast({ title: t('error'), description: 'السلة فارغة', variant: 'destructive' });
       return;
@@ -296,10 +307,13 @@ export function usePOS() {
       payments = [{ method, amount: total }];
     }
 
+    paying.current = true;
     try {
       await checkout.mutateAsync(payments);
     } catch {
       /* toast handled in mutation */
+    } finally {
+      paying.current = false;
     }
   };
 
